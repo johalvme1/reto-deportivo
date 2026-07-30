@@ -74,7 +74,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_DIRS = [
-    BASE_DIR.parent / 'frontend' / 'dist' / 'assets',
+    BASE_DIR.parent / 'frontend' / 'dist',
 ]
 
 MEDIA_URL = '/media/'

@@ -32,10 +32,10 @@ urlpatterns = [
     path('api/', api_root),
 ] + api_patterns
 
-# Serve React frontend for all other routes
-urlpatterns += [
-    re_path(r'^(?!api/|admin/|media/).*', TemplateView.as_view(template_name='index.html')),
-]
-
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Serve React frontend (SPA catch-all for all non-API routes)
+urlpatterns += [
+    re_path(r'^(?!api/|admin/|media/|static/).*', TemplateView.as_view(template_name='index.html')),
+]
