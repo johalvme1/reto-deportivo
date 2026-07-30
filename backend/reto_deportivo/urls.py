@@ -2,8 +2,25 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+@require_GET
+def api_root(request):
+    return JsonResponse({
+        'name': 'Reto Deportivo API',
+        'version': '1.0.0',
+        'endpoints': {
+            'auth': '/api/auth/',
+            'sports': '/api/sports/',
+            'activities': '/api/activities/',
+            'points': '/api/points/',
+            'admin': '/admin/',
+        }
+    })
 
 urlpatterns = [
+    path('', api_root, name='api-root'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/sports/', include('sports.urls')),
