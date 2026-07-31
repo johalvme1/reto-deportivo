@@ -47,6 +47,8 @@ h3 { font-size: 1rem; margin-bottom: 8px; color: #8a5f96; }
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-primary {
@@ -420,8 +422,81 @@ textarea { resize: vertical; min-height: 80px; }
 }
 
 @media (max-width: 600px) {
-  .points-grid { grid-template-columns: 1fr; }
-  .form-row { grid-template-columns: 1fr; }
-  .navbar { flex-direction: column; height: auto; padding: 12px; gap: 8px; }
-  .navbar-links { flex-wrap: wrap; justify-content: center; }
+  body { background-attachment: scroll; }
+  .container { padding: 12px; }
+  .card { padding: 16px; margin-bottom: 14px; }
+
+  h1 { font-size: 1.25rem; }
+  h2 { font-size: 1.05rem; }
+  h3 { font-size: 0.95rem; }
+
+  input, textarea, select { font-size: 16px; }
+
+  .points-grid { grid-template-columns: 1fr; gap: 12px; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .challenge-form .form-row { grid-template-columns: 1fr; }
+
+  .navbar {
+    flex-direction: column;
+    height: auto;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+  .navbar-brand { font-size: 1rem; }
+  .navbar-links { flex-wrap: wrap; justify-content: center; gap: 4px; }
+  .navbar-links a, .navbar-links button { padding: 7px 12px; font-size: 0.85rem; }
+
+  .auth-card { padding: 24px 18px; }
+  .auth-container { min-height: 70vh; }
+
+  .points-summary { padding: 12px; }
+  .points-summary-item .number { font-size: 1.5rem; }
+  .points-summary-item .label { font-size: 0.7rem; }
+
+  .point-card { padding: 16px; }
+  .point-card .point-icon { font-size: 1.6rem; }
+  .point-card .point-value { font-size: 1.2rem; }
+
+  .challenge-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .challenge-item .btn { width: 100%; justify-content: center; }
+  .challenge-item .btn-sm { padding: 10px 12px; }
+
+  .sport-item, .activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .sport-item .btn, .activity-item .btn { width: 100%; justify-content: center; }
+
+  .history-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .medal-item { padding: 10px 12px; gap: 10px; }
+  .medal-icon { font-size: 1.5rem; }
+
+  .inline-form { flex-direction: column; }
+
+  .modal { padding: 16px; }
+  .modal-actions { flex-direction: column; }
+  .modal-actions .btn { width: 100%; justify-content: center; }
+
+  .challenge-form { padding: 12px; }
+
+  .admin-tab { padding: 12px 6px; font-size: 0.85rem; }
+
+  .leaderboard-item { padding: 10px 8px; gap: 10px; }
+  .leaderboard-name { font-size: 0.95rem; }
+
+  .alert { font-size: 0.85rem; padding: 10px 12px; }
+}
+
+@media (max-width: 380px) {
+  .points-summary-item .number { font-size: 1.3rem; }
+  .btn { padding: 10px 14px; }
 }
