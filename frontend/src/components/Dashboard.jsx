@@ -157,6 +157,7 @@ export default function Dashboard() {
 
       <div className="points-grid">
         <div className={`point-card ${dp?.image ? 'done' : ''}`}>
+          {dp?.image && <span className="lock-badge">🔒 Bloqueado</span>}
           <div className="point-icon">📷</div>
           <h3>Subir imagen</h3>
           <div className="point-value">1 punto</div>
@@ -171,6 +172,7 @@ export default function Dashboard() {
         </div>
 
         <div className={`point-card ${dp?.steps && dp?.steps_image ? 'done' : ''}`}>
+          {dp?.steps && dp?.steps_image && <span className="lock-badge">🔒 Bloqueado</span>}
           <div className="point-icon">👟</div>
           <h3>Registrar pasos</h3>
           <div className="point-value">1 punto</div>
@@ -196,6 +198,7 @@ export default function Dashboard() {
         </div>
 
         <div className={`point-card ${dp?.activity_id ? 'done' : ''}`}>
+          {dp?.activity_id && <span className="lock-badge">🔒 Bloqueado</span>}
           <div className="point-icon">⚡</div>
           <h3>Actividad</h3>
           <div className="point-value">1 punto</div>
