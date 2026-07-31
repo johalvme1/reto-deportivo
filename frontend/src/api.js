@@ -21,7 +21,12 @@ async function request(url, options = {}) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Error del servidor' }));
-    throw new Error(err.error || 'Error del servidor');
+    let message = err.error || err.detail || 'Error del servidor';
+    if (!message && typeof err === 'object') {
+      const msgs = Object.values(err).flat();
+      message = msgs.length ? msgs[0] : 'Error del servidor';
+    }
+    throw new Error(message);
   }
 
   return res.json();
