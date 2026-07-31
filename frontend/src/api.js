@@ -240,3 +240,14 @@ export function sendMessage(text) {
     body: JSON.stringify({ text })
   });
 }
+
+export function markChatRead(lastReadId) {
+  return request('/chat/read/', {
+    method: 'POST',
+    body: JSON.stringify({ last_read_id: lastReadId })
+  });
+}
+
+export function getUnreadCount() {
+  return request('/chat/unread/');
+}

@@ -11,3 +11,11 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f'{self.user.name or self.user.username}: {self.text[:40]}'
+
+class ChatReadState(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_read_state')
+    last_read_id = models.PositiveBigIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.user}: hasta {self.last_read_id}'
+

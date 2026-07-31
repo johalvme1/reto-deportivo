@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals } from '../api';
+import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals, getUnreadCount } from '../api';
 
 function fmtCountdown(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -29,12 +30,20 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [now, setNow] = useState(Date.now());
+  const [unread, setUnread] = useState(0);
   const fileRef = useRef();
   const stepsFileRef = useRef();
   const evidenceFileRef = useRef();
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const poll = () => getUnreadCount().then(r => setUnread(r.unread_count)).catch(() => {});
+    poll();
+    const t = setInterval(poll, 5000);
     return () => clearInterval(t);
   }, []);
 
@@ -127,7 +136,14 @@ export default function Dashboard() {
   return (
     <div>
       <div className="card">
-        <h1>Bienvenido, {user.name || user.username}!</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <h1>Bienvenido, {user.name || user.username}!</h1>
+          {unread > 0 && (
+            <Link to="/chat" className="chat-unread-icon">
+              💬 {unread} mensaje{unread === 1 ? '' : 's'} nuevo{unread === 1 ? '' : 's'}
+            </Link>
+          )}
+        </div>
         <div className="points-summary">
           <div className="points-summary-item">
             <div className="number">{data?.todayPoints ?? 0}</div>

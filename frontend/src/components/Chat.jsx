@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getMessages, sendMessage } from '../api';
+import { getMessages, sendMessage, markChatRead } from '../api';
 
 const EMOJIS = [
   '😀','😄','😁','😂','🤣','😊','😍','😘','😎','🤩',
@@ -13,20 +13,25 @@ const EMOJIS = [
 export default function Chat() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
+  const [lastReadId, setLastReadId] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [showEmojis, setShowEmojis] = useState(false);
   const listRef = useRef(null);
   const inputRef = useRef(null);
+  const readTimerRef = useRef(null);
 
   const load = async () => {
     try {
-      const msgs = await getMessages();
+      const data = await getMessages();
       setMessages(prev => {
         const map = new Map(prev.map(m => [m.id, m]));
-        msgs.forEach(m => map.set(m.id, m));
+        data.messages.forEach(m => map.set(m.id, m));
         return [...map.values()];
       });
+      setLastReadId(data.last_read_id);
+      setUnreadCount(data.unread_count);
     } catch (err) {
       setError(err.message);
     }
@@ -37,6 +42,23 @@ export default function Chat() {
     const t = setInterval(load, 4000);
     return () => clearInterval(t);
   }, []);
+
+  const markAllRead = async () => {
+    if (messages.length === 0) return;
+    const maxId = messages[messages.length - 1].id;
+    if (maxId <= lastReadId) return;
+    setUnreadCount(0);
+    setLastReadId(maxId);
+    try { await markChatRead(maxId); } catch {}
+  };
+
+  useEffect(() => {
+    if (unreadCount > 0) {
+      clearTimeout(readTimerRef.current);
+      readTimerRef.current = setTimeout(markAllRead, 5000);
+    }
+    return () => clearTimeout(readTimerRef.current);
+  }, [unreadCount, messages.length]);
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -50,6 +72,8 @@ export default function Chat() {
     try {
       const msg = await sendMessage(value);
       setMessages(prev => [...prev, msg]);
+      setLastReadId(msg.id);
+      setUnreadCount(0);
       setText('');
       inputRef.current?.focus();
     } catch (err) {
@@ -69,6 +93,8 @@ export default function Chat() {
 
   const isMine = (m) => m.user === user.id;
 
+  const firstUnreadIndex = messages.findIndex(m => m.id > lastReadId);
+
   return (
     <div className="card">
       <h1>Chat del Reto</h1>
@@ -77,15 +103,20 @@ export default function Chat() {
         {messages.length === 0 && (
           <p style={{ color: '#b088c0', textAlign: 'center', padding: 20 }}>Sin mensajes todavía. ¡Saluda a tus compañeros!</p>
         )}
-        {messages.map(m => (
-          <div key={m.id} className={`chat-msg ${isMine(m) ? 'mine' : ''}`}>
-            <div className="chat-msg-head">
-              <strong>{m.user_name || m.username}</strong>
-              {(m.is_superuser || m.user_role === 'supervisor') && <span className="badge badge-supervisor" style={{ marginLeft: 6 }}>Supervisor</span>}
-              <span className="chat-msg-time">{fmtTime(m.created_at)}</span>
+        {messages.map((m, i) => (
+          <React.Fragment key={m.id}>
+            {i === firstUnreadIndex && (
+              <div className="chat-divider">— Mensajes sin leer —</div>
+            )}
+            <div className={`chat-msg ${isMine(m) ? 'mine' : ''}`}>
+              <div className="chat-msg-head">
+                <strong>{m.user_name || m.username}</strong>
+                {(m.is_superuser || m.user_role === 'supervisor') && <span className="badge badge-supervisor" style={{ marginLeft: 6 }}>Supervisor</span>}
+                <span className="chat-msg-time">{fmtTime(m.created_at)}</span>
+              </div>
+              <div className="chat-msg-text">{m.text}</div>
             </div>
-            <div className="chat-msg-text">{m.text}</div>
-          </div>
+          </React.Fragment>
         ))}
       </div>
       <form className="chat-form" onSubmit={handleSend}>

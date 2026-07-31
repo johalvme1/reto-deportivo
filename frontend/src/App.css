@@ -457,6 +457,36 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .emoji-btn:hover { background: #f3e7f6; }
 
+.chat-divider {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #d9629f;
+  background: #fdeef6;
+  border: 1px dashed #f0b8d4;
+  border-radius: 999px;
+  padding: 4px 12px;
+  align-self: center;
+  width: fit-content;
+}
+
+.chat-unread-icon {
+  display: inline-block;
+  background: linear-gradient(135deg, #f78ec6, #a8a1f0);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  animation: pulse 1.5s infinite;
+}
+.chat-unread-icon:hover { color: #fff; transform: scale(1.04); }
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(247, 142, 198, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(247, 142, 198, 0); }
+}
+
 
 
 
