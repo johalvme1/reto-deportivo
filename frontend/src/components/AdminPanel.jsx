@@ -6,6 +6,7 @@ function ChallengeManager() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [points, setPoints] = useState(5);
+  const [date, setDate] = useState('');
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [submissions, setSubmissions] = useState([]);
@@ -24,8 +25,8 @@ function ChallengeManager() {
     e.preventDefault();
     if (!title.trim() || !points) return;
     try {
-      await createChallenge({ title: title.trim(), description, points: Number(points) });
-      setTitle(''); setDescription(''); setPoints(5);
+      await createChallenge({ title: title.trim(), description, points: Number(points), date: date || null });
+      setTitle(''); setDescription(''); setPoints(5); setDate('');
       load();
     } catch (err) { alert(err.message); }
   };
@@ -44,8 +45,9 @@ function ChallengeManager() {
     if (!newTitle) return;
     const newDesc = prompt('Descripción:', c.description || '');
     const newPoints = prompt('Puntos extra:', c.points);
+    const newDate = prompt('Fecha límite (YYYY-MM-DD):', c.date || '');
     try {
-      await updateChallenge(id, { title: newTitle, description: newDesc, points: Number(newPoints) || 0, active: c.active });
+      await updateChallenge(id, { title: newTitle, description: newDesc, points: Number(newPoints) || 0, date: newDate || null, active: c.active });
       load();
     } catch (err) { alert(err.message); }
   };
@@ -74,6 +76,7 @@ function ChallengeManager() {
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título del reto" required />
         <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción" />
         <input type="number" min="1" value={points} onChange={e => setPoints(e.target.value)} placeholder="Puntos extra" style={{ width: 110 }} />
+        <input type="date" value={date} onChange={e => setDate(e.target.value)} />
         <button type="submit" className="btn btn-primary">Crear Reto</button>
       </form>
 
@@ -84,6 +87,7 @@ function ChallengeManager() {
               <strong>{c.title}</strong>
               <span className="badge" style={{ marginLeft: 8 }}>{c.points} pts</span>
               {c.active ? <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Activo</span> : <span className="badge badge-participant" style={{ marginLeft: 8 }}>Inactivo</span>}
+              {c.date && <span className="badge" style={{ marginLeft: 8, background: '#e0e0e0', color: '#555' }}>📅 {c.date}</span>}
               {c.description && <div style={{ fontSize: '0.85rem', color: '#888' }}>{c.description}</div>}
               <div style={{ fontSize: '0.75rem', color: '#aaa' }}>{c.submissions_count} evidencias</div>
             </div>

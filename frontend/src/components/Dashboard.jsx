@@ -205,6 +205,7 @@ export default function Dashboard() {
                 <div style={{ flex: 1 }}>
                   <strong>{c.title}</strong>
                   <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{c.points} pts</span>
+                  {c.date && <span className="badge" style={{ marginLeft: 8, background: '#e0e0e0', color: '#555' }}>📅 {c.date}</span>}
                   {c.description && <div style={{ fontSize: '0.85rem', color: '#888' }}>{c.description}</div>}
                   {c.user_submission && (
                     <div style={{ marginTop: 6 }}>
