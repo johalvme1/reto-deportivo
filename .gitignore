@@ -9,8 +9,8 @@ venv/
 
 # Django
 backend/db.sqlite3
-backend/media/uploads/*
-!backend/media/uploads/.gitkeep
+backend/media/*
+!backend/media/.gitkeep
 backend/static/
 
 # Node
