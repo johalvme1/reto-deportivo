@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { login } from '../api';
 
@@ -44,9 +43,9 @@ export default function Login() {
             {loading ? 'Ingresando...' : 'Iniciar Sesión'}
           </button>
         </form>
-        <div className="auth-link">
-          ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
-        </div>
+        <p className="auth-subtitle" style={{ marginTop: 16, fontSize: '0.8rem' }}>
+          Acceso exclusivo para miembros del reto.
+        </p>
       </div>
     </div>
   );

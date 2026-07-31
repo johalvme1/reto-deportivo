@@ -9,17 +9,13 @@ from .serializers import RegisterSerializer, UserSerializer
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'token': str(refresh.access_token),
-            'user': UserSerializer(user).data
-        }, status=status.HTTP_201_CREATED)
+    def post(self, request, *args, **kwargs):
+        return Response(
+            {'error': 'El registro está cerrado. Contacta al supervisor para darte de alta.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
