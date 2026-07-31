@@ -156,47 +156,6 @@ export default function Dashboard() {
       )}
 
       <div className="points-grid">
-        <div className={`point-card ${dp?.image ? 'done' : ''}`}>
-          {dp?.image && <span className="lock-badge">🔒 Bloqueado</span>}
-          <div className="point-icon">📷</div>
-          <h3>Subir imagen</h3>
-          <div className="point-value">1 punto</div>
-          {dp?.image ? (
-            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>Completado 🔒</span>
-          ) : (
-            <div style={{ marginTop: 8 }}>
-              <input type="file" ref={fileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6 }} />
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleImageUpload}>Subir</button>
-            </div>
-          )}
-        </div>
-
-        <div className={`point-card ${dp?.steps && dp?.steps_image ? 'done' : ''}`}>
-          {dp?.steps && dp?.steps_image && <span className="lock-badge">🔒 Bloqueado</span>}
-          <div className="point-icon">👟</div>
-          <h3>Registrar pasos</h3>
-          <div className="point-value">1 punto</div>
-          {dp?.steps && dp?.steps_image ? (
-            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
-              Hecho: {dp.steps.toLocaleString('es')} pasos + foto 🔒
-            </span>
-          ) : (
-            <div style={{ marginTop: 8 }}>
-              <input
-                type="number"
-                min="5000"
-                value={steps}
-                onChange={e => setSteps(e.target.value)}
-                placeholder="Mínimo 5,000 pasos"
-                style={{ textAlign: 'center' }}
-              />
-              <input type="file" ref={stepsFileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
-              <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Adjunta una foto como evidencia</p>
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={!steps || Number(steps) < 5000}>Registrar</button>
-            </div>
-          )}
-        </div>
-
         <div className={`point-card ${dp?.activity ? 'done' : ''}`}>
           {dp?.activity && <span className="lock-badge">🔒 Bloqueado</span>}
           <div className="point-icon">⚡</div>
@@ -227,6 +186,47 @@ export default function Dashboard() {
                   <button className="btn btn-success btn-sm" onClick={handleAddAndSubmitActivity} disabled={!newActivity.trim()}>Agregar</button>
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+
+        <div className={`point-card ${dp?.steps && dp?.steps_image ? 'done' : ''}`}>
+          {dp?.steps && dp?.steps_image && <span className="lock-badge">🔒 Bloqueado</span>}
+          <div className="point-icon">👟</div>
+          <h3>Registrar pasos</h3>
+          <div className="point-value">1 punto</div>
+          {dp?.steps && dp?.steps_image ? (
+            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
+              Hecho: {dp.steps.toLocaleString('es')} pasos + foto 🔒
+            </span>
+          ) : (
+            <div style={{ marginTop: 8 }}>
+              <input
+                type="number"
+                min="5000"
+                value={steps}
+                onChange={e => setSteps(e.target.value)}
+                placeholder="Mínimo 5,000 pasos"
+                style={{ textAlign: 'center' }}
+              />
+              <input type="file" ref={stepsFileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
+              <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Adjunta una foto como evidencia</p>
+              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={!steps || Number(steps) < 5000}>Registrar</button>
+            </div>
+          )}
+        </div>
+
+        <div className={`point-card ${dp?.image ? 'done' : ''}`}>
+          {dp?.image && <span className="lock-badge">🔒 Bloqueado</span>}
+          <div className="point-icon">📷</div>
+          <h3>Subir imagen</h3>
+          <div className="point-value">1 punto</div>
+          {dp?.image ? (
+            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>Completado 🔒</span>
+          ) : (
+            <div style={{ marginTop: 8 }}>
+              <input type="file" ref={fileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6 }} />
+              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleImageUpload}>Subir</button>
             </div>
           )}
         </div>
