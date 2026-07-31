@@ -111,11 +111,13 @@ class ChallengeSubmissionsView(APIView):
         except Challenge.DoesNotExist:
             return Response({'error': 'Reto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
-        if request.user.role != 'supervisor' and not challenge.submissions.filter(user=request.user).exists():
+        is_supervisor = request.user.role == 'supervisor' or request.user.is_superuser
+
+        if not is_supervisor and not challenge.submissions.filter(user=request.user).exists():
             return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
 
         subs = challenge.submissions.select_related('user')
-        if request.user.role != 'supervisor':
+        if not is_supervisor:
             subs = subs.filter(user=request.user)
 
         status_filter = request.query_params.get('status')
