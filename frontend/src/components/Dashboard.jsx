@@ -39,22 +39,21 @@ export default function Dashboard() {
   }, []);
 
   const loadData = async () => {
-    try {
-      const [todayRes, activitiesRes, historyRes, challengesRes, medalsRes] = await Promise.all([
-        getTodayPoints(),
-        getActivities(),
-        getHistory(),
-        getChallenges(true),
-        getMedals()
-      ]);
-      setData(todayRes);
-      setActivities(activitiesRes);
-      setHistory(historyRes);
-      setChallenges(challengesRes);
-      setMedals(medalsRes);
-    } catch (err) {
-      setError(err.message);
-    }
+    setError(''); setSuccess('');
+    const [todayRes, activitiesRes, historyRes, challengesRes, medalsRes] = await Promise.allSettled([
+      getTodayPoints(),
+      getActivities(),
+      getHistory(),
+      getChallenges(true),
+      getMedals()
+    ]);
+    if (todayRes.status === 'fulfilled') setData(todayRes.value);
+    if (activitiesRes.status === 'fulfilled') setActivities(activitiesRes.value);
+    if (historyRes.status === 'fulfilled') setHistory(historyRes.value);
+    if (challengesRes.status === 'fulfilled') setChallenges(challengesRes.value);
+    if (medalsRes.status === 'fulfilled') setMedals(medalsRes.value);
+    const failed = [todayRes, activitiesRes, historyRes, challengesRes, medalsRes].filter(r => r.status === 'rejected');
+    if (failed.length) setError(failed.map(r => r.reason?.message || 'Error del servidor').join(' '));
   };
 
   useEffect(() => { loadData(); }, []);
