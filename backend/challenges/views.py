@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from django.utils import timezone
+from django.db.models import Q
 from .models import Challenge, ChallengeSubmission, Medal
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
+from points.models import DailyPoint
 
 class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -107,13 +109,66 @@ class EvidenceGalleryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        from datetime import datetime, time as dtime
+
+        items = []
+
         subs = (
             ChallengeSubmission.objects.filter(status='approved')
             .exclude(user__is_superuser=True)
             .select_related('user', 'challenge')
             .order_by('-created_at')[:60]
         )
-        return Response(ChallengeSubmissionSerializer(subs, many=True).data)
+        for s in subs:
+            items.append({
+                'id': f'c{s.id}',
+                'kind': 'challenge',
+                'user_name': s.user.name or s.user.username,
+                'title': s.challenge.title,
+                'points': s.challenge.points,
+                'image': s.image.url if s.image else None,
+                'video': s.video.url if s.video else None,
+                'date': s.created_at.strftime('%Y-%m-%d'),
+                'sort_key': s.created_at.timestamp(),
+            })
+
+        dps = (
+            DailyPoint.objects
+            .exclude(user__is_superuser=True)
+            .filter(Q(image__isnull=False) & ~Q(image='') | Q(steps_image__isnull=False) & ~Q(steps_image=''))
+            .select_related('user')
+            .order_by('-date')[:60]
+        )
+        for d in dps:
+            sort_key = datetime.combine(d.date, dtime.min).timestamp()
+            user_name = d.user.name or d.user.username
+            if d.image:
+                items.append({
+                    'id': f'd{d.id}-img',
+                    'kind': 'daily',
+                    'user_name': user_name,
+                    'title': 'Evidencia diaria',
+                    'points': 1,
+                    'image': d.image.url,
+                    'video': None,
+                    'date': d.date.isoformat(),
+                    'sort_key': sort_key,
+                })
+            if d.steps_image:
+                items.append({
+                    'id': f'd{d.id}-steps',
+                    'kind': 'daily',
+                    'user_name': user_name,
+                    'title': 'Evidencia de pasos',
+                    'points': 1,
+                    'image': d.steps_image.url,
+                    'video': None,
+                    'date': d.date.isoformat(),
+                    'sort_key': sort_key,
+                })
+
+        items.sort(key=lambda e: e['sort_key'], reverse=True)
+        return Response(items[:60])
 
 class ChallengeSubmissionsView(APIView):
     permission_classes = [permissions.IsAuthenticated]

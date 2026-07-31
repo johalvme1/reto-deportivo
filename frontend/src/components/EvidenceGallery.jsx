@@ -29,10 +29,10 @@ export default function EvidenceGallery() {
             {s.video && <video src={s.video} controls preload="metadata" className="evidence-media" />}
             <div className="evidence-meta">
               <strong>{s.user_name}</strong>
-              <span className="badge badge-supervisor" style={{ marginLeft: 6 }}>{s.challenge_title} +{s.challenge_points} pts</span>
+              <span className="badge badge-supervisor" style={{ marginLeft: 6 }}>{s.title} +{s.points} pts</span>
             </div>
             <div style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>
-              {new Date(s.created_at).toLocaleDateString('es')}
+              {s.date}
             </div>
           </div>
         ))}
