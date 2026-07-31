@@ -130,7 +130,7 @@ export default function Dashboard() {
           <h3>Subir imagen</h3>
           <div className="point-value">1 punto</div>
           {dp?.image ? (
-            <span style={{ color: '#06d6a0', fontWeight: 600, fontSize: '0.85rem' }}>Completado</span>
+            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>Completado</span>
           ) : (
             <div style={{ marginTop: 8 }}>
               <input type="file" ref={fileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6 }} />
@@ -144,7 +144,7 @@ export default function Dashboard() {
           <h3>Registrar pasos</h3>
           <div className="point-value">1 punto</div>
           {dp?.steps ? (
-            <span style={{ color: '#06d6a0', fontWeight: 600, fontSize: '0.85rem' }}>
+            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
               Hecho: {dp.steps.toLocaleString('es')} pasos
             </span>
           ) : (
@@ -167,7 +167,7 @@ export default function Dashboard() {
           <h3>Actividad</h3>
           <div className="point-value">1 punto</div>
           {dp?.activity_id ? (
-            <span style={{ color: '#06d6a0', fontWeight: 600, fontSize: '0.85rem' }}>
+            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
               Hecho: {dp.activity_name}
             </span>
           ) : (
@@ -179,8 +179,8 @@ export default function Dashboard() {
                 ))}
               </select>
               <button className="btn btn-primary btn-sm" style={{ marginTop: 6, width: '100%' }} onClick={handleActivity} disabled={!selectedActivity}>Completar</button>
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #e0e0e0' }}>
-                <p style={{ fontSize: '0.75rem', color: '#888', marginBottom: 6 }}>¿No está en la lista? Agrega la tuya:</p>
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1e0f5' }}>
+                <p style={{ fontSize: '0.75rem', color: '#b088c0', marginBottom: 6 }}>¿No está en la lista? Agrega la tuya:</p>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <input
                     value={newActivity}
@@ -205,8 +205,8 @@ export default function Dashboard() {
                 <div style={{ flex: 1 }}>
                   <strong>{c.title}</strong>
                   <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{c.points} pts</span>
-                  {c.date && <span className="badge" style={{ marginLeft: 8, background: '#e0e0e0', color: '#555' }}>📅 {c.date}</span>}
-                  {c.description && <div style={{ fontSize: '0.85rem', color: '#888' }}>{c.description}</div>}
+                  {c.date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>📅 {c.date}</span>}
+                  {c.description && <div style={{ fontSize: '0.85rem', color: '#b088c0' }}>{c.description}</div>}
                   {c.user_submission && (
                     <div style={{ marginTop: 6 }}>
                       <span className={`badge ${c.user_submission.status === 'approved' ? 'badge-supervisor' : c.user_submission.status === 'rejected' ? 'badge-participant' : ''}`}>

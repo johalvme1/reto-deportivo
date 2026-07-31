@@ -19,7 +19,7 @@ export default function Leaderboard() {
     <div className="card">
       <h1>Ranking de Participantes</h1>
       {ranking.length === 0 ? (
-        <p style={{ color: '#888' }}>Aún no hay puntos registrados</p>
+        <p style={{ color: '#b088c0' }}>Aún no hay puntos registrados</p>
       ) : (
         <ul className="leaderboard-list">
           {ranking.map((p, i) => (

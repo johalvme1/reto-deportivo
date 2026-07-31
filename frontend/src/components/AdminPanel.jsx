@@ -87,9 +87,9 @@ function ChallengeManager() {
               <strong>{c.title}</strong>
               <span className="badge" style={{ marginLeft: 8 }}>{c.points} pts</span>
               {c.active ? <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Activo</span> : <span className="badge badge-participant" style={{ marginLeft: 8 }}>Inactivo</span>}
-              {c.date && <span className="badge" style={{ marginLeft: 8, background: '#e0e0e0', color: '#555' }}>📅 {c.date}</span>}
-              {c.description && <div style={{ fontSize: '0.85rem', color: '#888' }}>{c.description}</div>}
-              <div style={{ fontSize: '0.75rem', color: '#aaa' }}>{c.submissions_count} evidencias</div>
+              {c.date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>📅 {c.date}</span>}
+              {c.description && <div style={{ fontSize: '0.85rem', color: '#b088c0' }}>{c.description}</div>}
+              <div style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>{c.submissions_count} evidencias</div>
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button className="btn btn-primary btn-sm" onClick={() => loadSubmissions(c.id)}>Revisar evidencias</button>
@@ -99,13 +99,13 @@ function ChallengeManager() {
             </div>
           </div>
         ))}
-        {challenges.length === 0 && <p style={{ color: '#888' }}>No hay retos creados</p>}
+        {challenges.length === 0 && <p style={{ color: '#b088c0' }}>No hay retos creados</p>}
       </div>
 
       {selected && (
         <div style={{ marginTop: 16 }}>
           <h3>Evidencias del reto</h3>
-          {submissions.length === 0 && <p style={{ color: '#888' }}>Sin evidencias</p>}
+          {submissions.length === 0 && <p style={{ color: '#b088c0' }}>Sin evidencias</p>}
           {submissions.map(s => (
             <div key={s.id} className="challenge-item">
               <div style={{ flex: 1 }}>
