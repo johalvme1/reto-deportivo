@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import AdminPanel from './components/AdminPanel';
 import Leaderboard from './components/Leaderboard';
 import EvidenceGallery from './components/EvidenceGallery';
+import Chat from './components/Chat';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -31,6 +32,7 @@ function AppRoutes() {
           <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
           <Route path="/evidence" element={<ProtectedRoute><EvidenceGallery /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         </Routes>
       </div>
     </>

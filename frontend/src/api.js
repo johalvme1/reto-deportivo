@@ -229,3 +229,14 @@ export function getMedals(mine) {
 export function getEvidence() {
   return request('/challenges/evidence/');
 }
+
+export function getMessages() {
+  return request('/chat/');
+}
+
+export function sendMessage(text) {
+  return request('/chat/', {
+    method: 'POST',
+    body: JSON.stringify({ text })
+  });
+}

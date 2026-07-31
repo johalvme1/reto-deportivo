@@ -15,6 +15,7 @@ export default function Navbar() {
       <div className="navbar-links">
         <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Inicio</Link>
         <Link to="/leaderboard" className={location.pathname === '/leaderboard' ? 'active' : ''}>Ranking</Link>
+        <Link to="/chat" className={location.pathname === '/chat' ? 'active' : ''}>Chat</Link>
         {(user?.role === 'supervisor' || user?.is_superuser) && (
           <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>Admin</Link>
         )}

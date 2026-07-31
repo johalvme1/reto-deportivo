@@ -26,6 +26,7 @@ api_patterns = [
     path('api/activities/', include('activities.urls')),
     path('api/points/', include('points.urls')),
     path('api/challenges/', include('challenges.urls')),
+    path('api/chat/', include('chat.urls')),
 ]
 
 urlpatterns = [

@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'activities',
     'points',
     'challenges',
+    'chat',
 ]
 
 MIDDLEWARE = [
