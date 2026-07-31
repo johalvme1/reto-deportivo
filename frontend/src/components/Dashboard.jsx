@@ -138,11 +138,9 @@ export default function Dashboard() {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
           <h1>Bienvenido, {user.name || user.username}!</h1>
-          {unread > 0 && (
-            <Link to="/chat" className="chat-unread-icon">
-              💬 {unread} mensaje{unread === 1 ? '' : 's'} nuevo{unread === 1 ? '' : 's'}
-            </Link>
-          )}
+          <Link to="/chat" className="chat-link">
+            💬 Chat{unread > 0 && <span className="chat-unread-badge">{unread}</span>}
+          </Link>
         </div>
         <div className="points-summary">
           <div className="points-summary-item">
