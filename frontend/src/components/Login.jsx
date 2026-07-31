@@ -27,7 +27,10 @@ export default function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>Reto Deportivo</h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <img src="/static/divinas.jpeg" alt="Logo" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+          Reto Deportivo
+        </h1>
         <p className="auth-subtitle">Inicia sesión para continuar</p>
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleSubmit}>
