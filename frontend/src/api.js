@@ -131,10 +131,17 @@ export function uploadImage(file) {
   });
 }
 
-export function submitSteps(steps) {
-  return request('/points/steps/', {
+export function submitSteps(steps, file) {
+  const formData = new FormData();
+  formData.append('steps', steps);
+  formData.append('steps_image', file);
+  return fetch(`${API}/points/steps/`, {
     method: 'POST',
-    body: JSON.stringify({ steps })
+    headers: authHeaders(),
+    body: formData
+  }).then(res => {
+    if (!res.ok) return res.json().then(e => { throw new Error(e.error); });
+    return res.json();
   });
 }
 

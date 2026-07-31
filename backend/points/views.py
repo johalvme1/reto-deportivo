@@ -48,8 +48,14 @@ class ImageUploadView(APIView):
         return Response(DailyPointSerializer(dp).data)
 
 class StepsSubmitView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
     def post(self, request):
         steps = request.data.get('steps')
+        file = request.FILES.get('steps_image')
+        if not file:
+            return Response({'error': 'Debes subir una foto como evidencia de tus pasos'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             steps = int(steps)
             if steps <= 0:
@@ -60,10 +66,11 @@ class StepsSubmitView(APIView):
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
-        if dp.steps:
+        if dp.steps and dp.steps_image:
             return Response({'error': 'Los pasos de hoy ya fueron registrados y están bloqueados'}, status=status.HTTP_400_BAD_REQUEST)
 
         dp.steps = steps
+        dp.steps_image = file
         dp.save()
         return Response(DailyPointSerializer(dp).data)
 
@@ -102,7 +109,7 @@ class LeaderboardView(APIView):
 
         daily_agg = DailyPoint.objects.values('user').annotate(
             image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='')),
-            steps_count=Count('pk', filter=Q(steps__isnull=False)),
+            steps_count=Count('pk', filter=Q(steps__isnull=False) & Q(steps_image__isnull=False)),
             activity_count=Count('pk', filter=Q(activity__isnull=False)),
         )
         daily_map = {entry['user']: entry for entry in daily_agg}

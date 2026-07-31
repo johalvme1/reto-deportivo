@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [success, setSuccess] = useState('');
   const [now, setNow] = useState(Date.now());
   const fileRef = useRef();
+  const stepsFileRef = useRef();
   const evidenceFileRef = useRef();
 
   useEffect(() => {
@@ -71,12 +72,14 @@ export default function Dashboard() {
   };
 
   const handleSteps = async () => {
-    if (!steps || Number(steps) <= 0) return;
+    const file = stepsFileRef.current?.files?.[0];
+    if (!steps || Number(steps) <= 0 || !file) return;
     setError(''); setSuccess('');
     try {
-      await submitSteps(Number(steps));
-      setSuccess(`Pasos registrados (${steps})! +1 punto`);
+      await submitSteps(Number(steps), file);
+      setSuccess(`Pasos registrados (${steps}) con foto! +1 punto`);
       setSteps('');
+      stepsFileRef.current.value = '';
       loadData();
     } catch (err) { setError(err.message); }
   };
@@ -145,7 +148,7 @@ export default function Dashboard() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      {dp?.image && dp?.steps && dp?.activity_id && (
+      {dp?.image && dp?.steps && dp?.steps_image && dp?.activity_id && (
         <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong>Día completado</strong>
           <span>🔒 Registros de hoy bloqueados</span>
@@ -167,13 +170,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className={`point-card ${dp?.steps ? 'done' : ''}`}>
+        <div className={`point-card ${dp?.steps && dp?.steps_image ? 'done' : ''}`}>
           <div className="point-icon">👟</div>
           <h3>Registrar pasos</h3>
           <div className="point-value">1 punto</div>
-          {dp?.steps ? (
+          {dp?.steps && dp?.steps_image ? (
             <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
-              Hecho: {dp.steps.toLocaleString('es')} pasos 🔒
+              Hecho: {dp.steps.toLocaleString('es')} pasos + foto 🔒
             </span>
           ) : (
             <div style={{ marginTop: 8 }}>
@@ -185,6 +188,8 @@ export default function Dashboard() {
                 placeholder="Pasos de hoy"
                 style={{ textAlign: 'center' }}
               />
+              <input type="file" ref={stepsFileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
+              <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Adjunta una foto como evidencia</p>
               <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={!steps || Number(steps) <= 0}>Registrar</button>
             </div>
           )}
@@ -318,7 +323,7 @@ export default function Dashboard() {
                 <span className="history-date">{h.date}</span>
                 <span>
                   {h.image && '📷 '}
-                  {h.steps && `👟${h.steps.toLocaleString('es')} `}
+                  {h.steps && `👟${h.steps.toLocaleString('es')}${h.steps_image ? ' 📷' : ''} `}
                   {h.activity_name && `⚡${h.activity_name} `}
                 </span>
                 <span className="history-points">{h.points} pts</span>
