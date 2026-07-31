@@ -7,10 +7,14 @@ function ChallengeManager() {
   const [description, setDescription] = useState('');
   const [points, setPoints] = useState(5);
   const [startDate, setStartDate] = useState('');
+  const [startTime, setStartTime] = useState('00:00');
   const [endDate, setEndDate] = useState('');
+  const [endTime, setEndTime] = useState('23:59');
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [submissions, setSubmissions] = useState([]);
+
+  const buildDateTime = (d, t) => d ? `${d}T${t || '00:00'}` : null;
 
   const load = async () => {
     try { setChallenges(await getChallenges()); } catch {}
@@ -26,8 +30,8 @@ function ChallengeManager() {
     e.preventDefault();
     if (!title.trim() || !points) return;
     try {
-      await createChallenge({ title: title.trim(), description, points: Number(points), start_date: startDate || null, end_date: endDate || null });
-      setTitle(''); setDescription(''); setPoints(5); setStartDate(''); setEndDate('');
+      await createChallenge({ title: title.trim(), description, points: Number(points), start_date: buildDateTime(startDate, startTime), end_date: buildDateTime(endDate, endTime) });
+      setTitle(''); setDescription(''); setPoints(5); setStartDate(''); setStartTime('00:00'); setEndDate(''); setEndTime('23:59');
       load();
     } catch (err) { alert(err.message); }
   };
@@ -46,10 +50,14 @@ function ChallengeManager() {
     if (!newTitle) return;
     const newDesc = prompt('Descripción:', c.description || '');
     const newPoints = prompt('Puntos extra:', c.points);
-    const newStart = prompt('Inicio (YYYY-MM-DDTHH:MM):', (c.start_date || '').replace('T', 'T').slice(0, 16));
-    const newEnd = prompt('Fin (YYYY-MM-DDTHH:MM):', (c.end_date || '').replace('T', 'T').slice(0, 16));
+    const newStartD = prompt('Fecha de inicio (YYYY-MM-DD):', c.start_date ? c.start_date.slice(0, 10) : '');
+    if (newStartD === null) return;
+    const newStartT = prompt('Hora de inicio (HH:MM):', c.start_date ? c.start_date.slice(11, 16) : '00:00');
+    const newEndD = prompt('Fecha límite (YYYY-MM-DD):', c.end_date ? c.end_date.slice(0, 10) : '');
+    if (newEndD === null) return;
+    const newEndT = prompt('Hora límite (HH:MM):', c.end_date ? c.end_date.slice(11, 16) : '23:59');
     try {
-      await updateChallenge(id, { title: newTitle, description: newDesc, points: Number(newPoints) || 0, start_date: newStart || null, end_date: newEnd || null, active: c.active });
+      await updateChallenge(id, { title: newTitle, description: newDesc, points: Number(newPoints) || 0, start_date: buildDateTime(newStartD, newStartT), end_date: buildDateTime(newEndD, newEndT), active: c.active });
       load();
     } catch (err) { alert(err.message); }
   };
@@ -89,12 +97,14 @@ function ChallengeManager() {
             <input type="number" min="1" value={points} onChange={e => setPoints(e.target.value)} />
           </div>
           <div className="form-group">
-            <label>Fecha y hora de inicio</label>
-            <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            <label>Fecha de inicio</label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} style={{ marginTop: 6 }} />
           </div>
           <div className="form-group">
-            <label>Fecha y hora límite</label>
-            <input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            <label>Fecha límite</label>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={{ marginTop: 6 }} />
           </div>
         </div>
         <button type="submit" className="btn btn-primary">Crear Reto</button>
