@@ -41,14 +41,15 @@ class SubmitEvidenceView(APIView):
 
     def post(self, request, challenge_id):
         try:
-            challenge = Challenge.objects.get(id=challenge_id, active=True)
+            challenge = Challenge.objects.get(id=challenge_id)
         except Challenge.DoesNotExist:
             return Response({'error': 'Reto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        now = timezone.now()
 
         if not challenge.effective_active(now):
             return Response({'error': 'Este reto no está activo'}, status=status.HTTP_400_BAD_REQUEST)
 
-        now = timezone.now()
         if challenge.start_date and now < challenge.start_date:
             return Response({'error': 'Este reto aún no ha iniciado'}, status=status.HTTP_400_BAD_REQUEST)
         if challenge.end_date and now > challenge.end_date:

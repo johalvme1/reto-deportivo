@@ -203,9 +203,14 @@ export function submitChallengeEvidence(challengeId, file, kind) {
     method: 'POST',
     headers: authHeaders(),
     body: formData
-  }).then(res => {
-    if (!res.ok) return res.json().then(e => { throw new Error(e.error); });
-    return res.json();
+  }).then(async res => {
+    const isJson = (res.headers.get('content-type') || '').includes('application/json');
+    if (!res.ok) {
+      const body = isJson ? await res.json() : await res.text();
+      const msg = body && typeof body === 'object' ? (body.error || body.detail || 'Error del servidor') : `Error del servidor (${res.status})`;
+      throw new Error(msg);
+    }
+    return isJson ? res.json() : res.text();
   });
 }
 
