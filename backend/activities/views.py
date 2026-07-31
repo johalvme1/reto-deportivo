@@ -5,7 +5,7 @@ from .serializers import ActivitySerializer
 class IsSupervisorForModification(permissions.BasePermission):
     def has_permission(self, request, view):
         if view.action in ['update', 'partial_update', 'destroy']:
-            return request.user.is_authenticated and request.user.role == 'supervisor'
+            return request.user.is_authenticated and (request.user.role == 'supervisor' or request.user.is_superuser)
         return request.user.is_authenticated
 
 class ActivityViewSet(viewsets.ModelViewSet):

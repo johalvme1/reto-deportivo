@@ -15,7 +15,7 @@ export default function Navbar() {
       <div className="navbar-links">
         <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Inicio</Link>
         <Link to="/leaderboard" className={location.pathname === '/leaderboard' ? 'active' : ''}>Ranking</Link>
-        {user?.role === 'supervisor' && (
+        {(user?.role === 'supervisor' || user?.is_superuser) && (
           <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>Admin</Link>
         )}
         <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', padding: '0 8px' }}>

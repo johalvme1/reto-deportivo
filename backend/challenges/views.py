@@ -10,7 +10,7 @@ class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
         action = getattr(view, 'action', None)
         if action is None or action in ['create', 'update', 'partial_update', 'destroy']:
-            return request.user.is_authenticated and request.user.role == 'supervisor'
+            return request.user.is_authenticated and (request.user.role == 'supervisor' or request.user.is_superuser)
         return request.user.is_authenticated
 
 class ChallengeViewSet(viewsets.ModelViewSet):

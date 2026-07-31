@@ -5,7 +5,7 @@ from .serializers import SportSerializer
 class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
         if view.action in ['create', 'update', 'partial_update', 'destroy']:
-            return request.user.is_authenticated and request.user.role == 'supervisor'
+            return request.user.is_authenticated and (request.user.role == 'supervisor' or request.user.is_superuser)
         return True
 
 class SportViewSet(viewsets.ModelViewSet):
