@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, getHistory } from '../api';
+import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory } from '../api';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [history, setHistory] = useState([]);
   const [steps, setSteps] = useState('');
   const [selectedActivity, setSelectedActivity] = useState('');
+  const [newActivity, setNewActivity] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileRef = useRef();
@@ -59,6 +60,19 @@ export default function Dashboard() {
     try {
       await submitActivity(Number(selectedActivity));
       setSuccess('Actividad completada! +1 punto');
+      setSelectedActivity('');
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleAddAndSubmitActivity = async () => {
+    if (!newActivity.trim()) return;
+    setError(''); setSuccess('');
+    try {
+      const created = await createActivity({ name: newActivity.trim() });
+      await submitActivity(created.id);
+      setSuccess(`Actividad "${created.name}" agregada y completada! +1 punto`);
+      setNewActivity('');
       setSelectedActivity('');
       loadData();
     } catch (err) { setError(err.message); }
@@ -140,10 +154,22 @@ export default function Dashboard() {
               <select value={selectedActivity} onChange={e => setSelectedActivity(e.target.value)}>
                 <option value="">Seleccionar actividad</option>
                 {activities.map(a => (
-                  <option key={a.id} value={a.id}>{a.name} ({a.sport_name})</option>
+                  <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleActivity} disabled={!selectedActivity}>Completar</button>
+              <button className="btn btn-primary btn-sm" style={{ marginTop: 6, width: '100%' }} onClick={handleActivity} disabled={!selectedActivity}>Completar</button>
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #e0e0e0' }}>
+                <p style={{ fontSize: '0.75rem', color: '#888', marginBottom: 6 }}>¿No está en la lista? Agrega la tuya:</p>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input
+                    value={newActivity}
+                    onChange={e => setNewActivity(e.target.value)}
+                    placeholder="Ej: Yoga"
+                    onKeyDown={e => { if (e.key === 'Enter') handleAddAndSubmitActivity(); }}
+                  />
+                  <button className="btn btn-success btn-sm" onClick={handleAddAndSubmitActivity} disabled={!newActivity.trim()}>Agregar</button>
+                </div>
+              </div>
             </div>
           )}
         </div>

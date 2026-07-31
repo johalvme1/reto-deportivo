@@ -2,16 +2,16 @@ from rest_framework import viewsets, permissions
 from .models import Activity
 from .serializers import ActivitySerializer
 
-class IsSupervisor(permissions.BasePermission):
+class IsSupervisorForModification(permissions.BasePermission):
     def has_permission(self, request, view):
-        if view.action in ['create', 'update', 'partial_update', 'destroy']:
+        if view.action in ['update', 'partial_update', 'destroy']:
             return request.user.is_authenticated and request.user.role == 'supervisor'
-        return True
+        return request.user.is_authenticated
 
 class ActivityViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.select_related('sport').all()
     serializer_class = ActivitySerializer
-    permission_classes = [permissions.IsAuthenticated, IsSupervisor]
+    permission_classes = [permissions.IsAuthenticated, IsSupervisorForModification]
 
     def get_queryset(self):
         qs = super().get_queryset()
