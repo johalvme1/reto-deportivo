@@ -19,17 +19,27 @@ async function request(url, options = {}) {
     }
   });
 
+  const contentType = res.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+  const text = await res.text();
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Error del servidor' }));
-    let message = err.error || err.detail || 'Error del servidor';
-    if (!message && typeof err === 'object') {
-      const msgs = Object.values(err).flat();
-      message = msgs.length ? msgs[0] : 'Error del servidor';
+    let message = 'Error del servidor';
+    if (isJson && text) {
+      const err = JSON.parse(text);
+      message = err.error || err.detail || message;
+      if (!message && typeof err === 'object' && err !== null) {
+        const msgs = Object.values(err).flat();
+        message = msgs.length ? msgs[0] : 'Error del servidor';
+      }
+    } else if (text) {
+      message = `Error del servidor (${res.status})`;
     }
     throw new Error(message);
   }
 
-  return res.json();
+  if (!text) return null;
+  return isJson ? JSON.parse(text) : text;
 }
 
 export function login(email, password) {
