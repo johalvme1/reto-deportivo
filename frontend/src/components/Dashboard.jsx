@@ -243,7 +243,7 @@ export default function Dashboard() {
 
       {medals.length > 0 && (
         <div className="card">
-          <h2>🏅 Medallas de Logros</h2>
+          <h2>🏅 Medallas por Retos</h2>
           <div className="medals-list">
             {medals.map(m => (
               <div key={m.id} className={`medal-item ${m.user === user.id ? 'mine' : ''}`}>
