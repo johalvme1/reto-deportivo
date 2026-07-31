@@ -74,12 +74,29 @@ function ChallengeManager() {
   return (
     <div>
       <h2>Gestionar Retos</h2>
-      <form className="inline-form" onSubmit={handleCreate}>
-        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título del reto" required />
-        <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción" />
-        <input type="number" min="1" value={points} onChange={e => setPoints(e.target.value)} placeholder="Puntos extra" style={{ width: 110 }} />
-        <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} />
-        <input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} />
+      <form className="challenge-form" onSubmit={handleCreate}>
+        <div className="form-group">
+          <label>Título del reto</label>
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ej: Reto 5 kilómetros" required />
+        </div>
+        <div className="form-group">
+          <label>Descripción</label>
+          <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe en qué consiste el reto" />
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>Puntos extra</label>
+            <input type="number" min="1" value={points} onChange={e => setPoints(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Fecha y hora de inicio</label>
+            <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Fecha y hora límite</label>
+            <input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} />
+          </div>
+        </div>
         <button type="submit" className="btn btn-primary">Crear Reto</button>
       </form>
 
