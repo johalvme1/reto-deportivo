@@ -190,6 +190,21 @@ export default function Dashboard() {
           )}
         </div>
 
+        <div className={`point-card ${dp?.image ? 'done' : ''}`}>
+          {dp?.image && <span className="lock-badge">🔒 Bloqueado</span>}
+          <div className="point-icon">📷</div>
+          <h3>Subir imagen</h3>
+          <div className="point-value">1 punto</div>
+          {dp?.image ? (
+            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>Completado 🔒</span>
+          ) : (
+            <div style={{ marginTop: 8 }}>
+              <input type="file" ref={fileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6 }} />
+              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleImageUpload}>Subir</button>
+            </div>
+          )}
+        </div>
+
         <div className={`point-card ${dp?.steps && dp?.steps_image ? 'done' : ''}`}>
           {dp?.steps && dp?.steps_image && <span className="lock-badge">🔒 Bloqueado</span>}
           <div className="point-icon">👟</div>
@@ -212,21 +227,6 @@ export default function Dashboard() {
               <input type="file" ref={stepsFileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
               <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Adjunta una foto como evidencia</p>
               <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={!steps || Number(steps) < 5000}>Registrar</button>
-            </div>
-          )}
-        </div>
-
-        <div className={`point-card ${dp?.image ? 'done' : ''}`}>
-          {dp?.image && <span className="lock-badge">🔒 Bloqueado</span>}
-          <div className="point-icon">📷</div>
-          <h3>Subir imagen</h3>
-          <div className="point-value">1 punto</div>
-          {dp?.image ? (
-            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>Completado 🔒</span>
-          ) : (
-            <div style={{ marginTop: 8 }}>
-              <input type="file" ref={fileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6 }} />
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleImageUpload}>Subir</button>
             </div>
           )}
         </div>
