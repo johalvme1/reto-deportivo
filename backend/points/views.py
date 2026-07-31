@@ -58,10 +58,11 @@ class StepsSubmitView(APIView):
 
         try:
             steps = int(steps)
-            if steps <= 0:
-                raise ValueError
         except (TypeError, ValueError):
             return Response({'error': 'Cantidad de pasos inválida'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if steps < 5000:
+            return Response({'error': 'Debes registrar al menos 5,000 pasos para ganar el punto'}, status=status.HTTP_400_BAD_REQUEST)
 
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)

@@ -73,7 +73,7 @@ export default function Dashboard() {
 
   const handleSteps = async () => {
     const file = stepsFileRef.current?.files?.[0];
-    if (!steps || Number(steps) <= 0 || !file) return;
+    if (!steps || Number(steps) < 5000 || !file) return;
     setError(''); setSuccess('');
     try {
       await submitSteps(Number(steps), file);
@@ -184,15 +184,15 @@ export default function Dashboard() {
             <div style={{ marginTop: 8 }}>
               <input
                 type="number"
-                min="1"
+                min="5000"
                 value={steps}
                 onChange={e => setSteps(e.target.value)}
-                placeholder="Pasos de hoy"
+                placeholder="Mínimo 5,000 pasos"
                 style={{ textAlign: 'center' }}
               />
               <input type="file" ref={stepsFileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
               <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Adjunta una foto como evidencia</p>
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={!steps || Number(steps) <= 0}>Registrar</button>
+              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={!steps || Number(steps) < 5000}>Registrar</button>
             </div>
           )}
         </div>
