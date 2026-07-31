@@ -8,6 +8,21 @@ body {
   background-attachment: fixed;
 }
 
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image: url('/static/divinas.jpeg');
+  background-repeat: repeat;
+  background-size: 320px;
+  background-position: center;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+#root { position: relative; z-index: 1; }
+
 .container {
   max-width: 900px;
   margin: 0 auto;
