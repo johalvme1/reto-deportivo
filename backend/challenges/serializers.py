@@ -4,11 +4,15 @@ from .models import Challenge, ChallengeSubmission, Medal
 class ChallengeSerializer(serializers.ModelSerializer):
     submissions_count = serializers.SerializerMethodField()
     user_submission = serializers.SerializerMethodField()
+    is_active = serializers.SerializerMethodField()
 
     class Meta:
         model = Challenge
-        fields = ['id', 'title', 'description', 'points', 'video', 'start_date', 'end_date', 'active', 'created_by', 'created_at', 'submissions_count', 'user_submission']
+        fields = ['id', 'title', 'description', 'points', 'video', 'start_date', 'end_date', 'active', 'is_active', 'created_by', 'created_at', 'submissions_count', 'user_submission']
         read_only_fields = ['created_by', 'created_at']
+
+    def get_is_active(self, obj):
+        return obj.effective_active()
 
     def get_submissions_count(self, obj):
         return obj.submissions.count()

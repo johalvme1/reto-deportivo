@@ -40,7 +40,7 @@ function ChallengeManager() {
   const handleToggleActive = async (id) => {
     const c = challenges.find(ch => ch.id === id);
     try {
-      await updateChallenge(id, { ...c, active: !c.active });
+      await updateChallenge(id, { active: !c.active });
       load();
     } catch (err) { alert(err.message); }
   };

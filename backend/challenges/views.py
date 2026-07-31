@@ -45,7 +45,7 @@ class SubmitEvidenceView(APIView):
         except Challenge.DoesNotExist:
             return Response({'error': 'Reto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not challenge.active:
+        if not challenge.effective_active(now):
             return Response({'error': 'Este reto no está activo'}, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()

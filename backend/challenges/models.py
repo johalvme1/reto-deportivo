@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class Challenge(models.Model):
     title = models.CharField(max_length=200)
@@ -17,6 +18,18 @@ class Challenge(models.Model):
 
     def __str__(self):
         return self.title
+
+    def effective_active(self, now=None):
+        now = now or timezone.now()
+        if self.active:
+            return True
+        if not self.start_date:
+            return False
+        if self.start_date > now:
+            return False
+        if self.end_date and now > self.end_date:
+            return False
+        return True
 
 class ChallengeSubmission(models.Model):
     STATUS_CHOICES = [

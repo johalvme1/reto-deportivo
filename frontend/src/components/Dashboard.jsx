@@ -262,7 +262,7 @@ export default function Dashboard() {
                 if (!started) counter = { label: 'Inicia en', target: start };
                 else counter = { label: 'Quedan', target: end };
               }
-              const canSubmit = c.active && inWindow && !approved && !pending && !c.user_submission;
+              const canSubmit = c.is_active && inWindow && !approved && !pending && !c.user_submission;
               return (
                 <div key={c.id} className="challenge-item">
                   <div style={{ flex: 1 }}>
@@ -274,7 +274,7 @@ export default function Dashboard() {
                       </span>
                     )}
                     {approved && <span className="badge" style={{ marginLeft: 8, background: '#06d6a0', color: '#0d5c43' }}>🏅 Completado</span>}
-                    {!c.active && !approved && <span className="badge badge-participant" style={{ marginLeft: 8 }}>🔒 Inactivo</span>}
+                    {!c.is_active && !approved && <span className="badge badge-participant" style={{ marginLeft: 8 }}>🔒 Inactivo</span>}
                     {finished && !approved && <span className="badge badge-participant" style={{ marginLeft: 8 }}>🔒 Reto terminado</span>}
                     {!finished && !started && <span className="badge badge-participant" style={{ marginLeft: 8 }}>🔒 Aún no inicia</span>}
                     {c.description && <div style={{ fontSize: '0.85rem', color: '#b088c0' }}>{c.description}</div>}
