@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence } from '../api';
+import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals } from '../api';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [activities, setActivities] = useState([]);
   const [history, setHistory] = useState([]);
   const [challenges, setChallenges] = useState([]);
+  const [medals, setMedals] = useState([]);
   const [steps, setSteps] = useState('');
   const [selectedActivity, setSelectedActivity] = useState('');
   const [newActivity, setNewActivity] = useState('');
@@ -20,16 +21,18 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      const [todayRes, activitiesRes, historyRes, challengesRes] = await Promise.all([
+      const [todayRes, activitiesRes, historyRes, challengesRes, medalsRes] = await Promise.all([
         getTodayPoints(),
         getActivities(),
         getHistory(),
-        getChallenges(true)
+        getChallenges(true),
+        getMedals()
       ]);
       setData(todayRes);
       setActivities(activitiesRes);
       setHistory(historyRes);
       setChallenges(challengesRes);
+      setMedals(medalsRes);
     } catch (err) {
       setError(err.message);
     }
@@ -232,6 +235,27 @@ export default function Dashboard() {
                     <button className="btn btn-primary btn-sm" onClick={() => { setEvidenceFor(c.id); setEvidenceKind('image'); }}>Enviar evidencia</button>
                   )
                 )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {medals.length > 0 && (
+        <div className="card">
+          <h2>🏅 Medallas de Logros</h2>
+          <div className="medals-list">
+            {medals.map(m => (
+              <div key={m.id} className={`medal-item ${m.user === user.id ? 'mine' : ''}`}>
+                <div className="medal-icon">🏅</div>
+                <div style={{ flex: 1 }}>
+                  <strong>{m.challenge_title}</strong>
+                  <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{m.challenge_points} pts</span>
+                  {m.user === user.id && <span className="badge badge-participant" style={{ marginLeft: 8 }}>Tuya</span>}
+                  <div style={{ fontSize: '0.8rem', color: '#b088c0' }}>
+                    {m.user_name} · {new Date(m.awarded_at).toLocaleDateString('es')}
+                  </div>
+                </div>
               </div>
             ))}
           </div>

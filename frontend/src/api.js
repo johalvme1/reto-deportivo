@@ -198,3 +198,8 @@ export function reviewSubmission(submissionId, status) {
     body: JSON.stringify({ status })
   });
 }
+
+export function getMedals(mine) {
+  const query = mine ? '?mine=true' : '';
+  return request(`/challenges/medals/${query}`);
+}

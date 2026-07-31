@@ -34,3 +34,15 @@ class ChallengeSubmission(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.challenge.title}'
+
+class Medal(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='medals')
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name='medals')
+    awarded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'challenge')
+        ordering = ['-awarded_at']
+
+    def __str__(self):
+        return f'Medalla: {self.user.name} - {self.challenge.title}'

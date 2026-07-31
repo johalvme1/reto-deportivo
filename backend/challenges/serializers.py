@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Challenge, ChallengeSubmission
+from .models import Challenge, ChallengeSubmission, Medal
 
 class ChallengeSerializer(serializers.ModelSerializer):
     submissions_count = serializers.SerializerMethodField()
@@ -37,3 +37,12 @@ class ChallengeSubmissionSerializer(serializers.ModelSerializer):
         model = ChallengeSubmission
         fields = ['id', 'challenge', 'challenge_title', 'challenge_points', 'user', 'user_name', 'image', 'video', 'status', 'created_at']
         read_only_fields = ['user', 'status', 'created_at']
+
+class MedalSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.name', read_only=True)
+    challenge_title = serializers.CharField(source='challenge.title', read_only=True)
+    challenge_points = serializers.IntegerField(source='challenge.points', read_only=True)
+
+    class Meta:
+        model = Medal
+        fields = ['id', 'user', 'user_name', 'challenge', 'challenge_title', 'challenge_points', 'awarded_at']

@@ -2,8 +2,8 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
-from .models import Challenge, ChallengeSubmission
-from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer
+from .models import Challenge, ChallengeSubmission, Medal
+from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
 
 class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -80,7 +80,18 @@ class ReviewSubmissionView(APIView):
 
         submission.status = decision
         submission.save()
+
+        if decision == 'approved':
+            Medal.objects.get_or_create(user=submission.user, challenge=submission.challenge)
+
         return Response(ChallengeSubmissionSerializer(submission).data)
+
+class MedalsView(APIView):
+    def get(self, request):
+        medals = Medal.objects.select_related('user', 'challenge')
+        if request.query_params.get('mine') == 'true':
+            medals = medals.filter(user=request.user)
+        return Response(MedalSerializer(medals, many=True).data)
 
 class ChallengeSubmissionsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
