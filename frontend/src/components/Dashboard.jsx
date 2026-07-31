@@ -1,29 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory } from '../api';
+import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence } from '../api';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [activities, setActivities] = useState([]);
   const [history, setHistory] = useState([]);
+  const [challenges, setChallenges] = useState([]);
   const [steps, setSteps] = useState('');
   const [selectedActivity, setSelectedActivity] = useState('');
   const [newActivity, setNewActivity] = useState('');
+  const [evidenceFor, setEvidenceFor] = useState(null);
+  const [evidenceKind, setEvidenceKind] = useState('image');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileRef = useRef();
+  const evidenceFileRef = useRef();
 
   const loadData = async () => {
     try {
-      const [todayRes, activitiesRes, historyRes] = await Promise.all([
+      const [todayRes, activitiesRes, historyRes, challengesRes] = await Promise.all([
         getTodayPoints(),
         getActivities(),
-        getHistory()
+        getHistory(),
+        getChallenges(true)
       ]);
       setData(todayRes);
       setActivities(activitiesRes);
       setHistory(historyRes);
+      setChallenges(challengesRes);
     } catch (err) {
       setError(err.message);
     }
@@ -74,6 +80,21 @@ export default function Dashboard() {
       setSuccess(`Actividad "${created.name}" agregada y completada! +1 punto`);
       setNewActivity('');
       setSelectedActivity('');
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleEvidence = async () => {
+    if (!evidenceFor) return;
+    const file = evidenceFileRef.current?.files?.[0];
+    if (!file) return;
+    setError(''); setSuccess('');
+    try {
+      await submitChallengeEvidence(evidenceFor, file, evidenceKind);
+      setSuccess('Evidencia enviada! Espera la aprobación del supervisor para sumar puntos.');
+      setEvidenceFor(null);
+      setEvidenceKind('image');
+      evidenceFileRef.current.value = '';
       loadData();
     } catch (err) { setError(err.message); }
   };
@@ -174,6 +195,47 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {challenges.length > 0 && (
+        <div className="card">
+          <h2>Retos Extra</h2>
+          <div className="challenge-list">
+            {challenges.map(c => (
+              <div key={c.id} className="challenge-item">
+                <div style={{ flex: 1 }}>
+                  <strong>{c.title}</strong>
+                  <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{c.points} pts</span>
+                  {c.description && <div style={{ fontSize: '0.85rem', color: '#888' }}>{c.description}</div>}
+                  {c.user_submission && (
+                    <div style={{ marginTop: 6 }}>
+                      <span className={`badge ${c.user_submission.status === 'approved' ? 'badge-supervisor' : c.user_submission.status === 'rejected' ? 'badge-participant' : ''}`}>
+                        {c.user_submission.status === 'approved' ? 'Aprobado +' + c.points + ' pts' : c.user_submission.status === 'rejected' ? 'Rechazado' : 'Pendiente de revisión'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {evidenceFor === c.id ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                    <select value={evidenceKind} onChange={e => setEvidenceKind(e.target.value)}>
+                      <option value="image">Foto</option>
+                      <option value="video">Video</option>
+                    </select>
+                    <input type="file" ref={evidenceFileRef} accept={evidenceKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem' }} />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-primary btn-sm" onClick={handleEvidence}>Enviar evidencia</button>
+                      <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceKind('image'); evidenceFileRef.current.value = ''; }}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  !c.user_submission && (
+                    <button className="btn btn-primary btn-sm" onClick={() => { setEvidenceFor(c.id); setEvidenceKind('image'); }}>Enviar evidencia</button>
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {history.length > 0 && (
         <div className="card">

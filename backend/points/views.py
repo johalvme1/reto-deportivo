@@ -7,6 +7,8 @@ from django.db.models import Count, Q
 from .models import DailyPoint
 from .serializers import DailyPointSerializer
 from activities.models import Activity
+from challenges.models import ChallengeSubmission
+from django.contrib.auth import get_user_model
 
 class TodayPointsView(APIView):
     def get(self, request):
@@ -95,20 +97,31 @@ class LeaderboardView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        all_users = DailyPoint.objects.values('user', 'user__username', 'user__name', 'user__avatar').annotate(
+        from django.db.models import Count, Q, Sum, F
+        User = get_user_model()
+
+        daily_agg = DailyPoint.objects.values('user').annotate(
             image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='')),
             steps_count=Count('pk', filter=Q(steps__isnull=False)),
             activity_count=Count('pk', filter=Q(activity__isnull=False)),
-        ).order_by('-image_count', '-steps_count', '-activity_count')
+        )
+        daily_map = {entry['user']: entry for entry in daily_agg}
+
+        challenge_agg = ChallengeSubmission.objects.filter(status='approved').values('user').annotate(
+            extra_points=Sum(F('challenge__points'))
+        )
+        extra_map = {entry['user']: entry['extra_points'] for entry in challenge_agg}
 
         leaderboard = []
-        for entry in all_users:
-            total = entry['image_count'] + entry['steps_count'] + entry['activity_count']
+        for user in User.objects.filter(role='participant'):
+            d = daily_map.get(user.id, {})
+            total = d.get('image_count', 0) + d.get('steps_count', 0) + d.get('activity_count', 0) + extra_map.get(user.id, 0)
             leaderboard.append({
-                'id': entry['user'],
-                'name': entry['user__name'] or entry['user__username'],
-                'avatar': entry['user__avatar'],
+                'id': user.id,
+                'name': user.name or user.username,
+                'avatar': user.avatar.url if user.avatar else None,
                 'total_points': total
             })
 
+        leaderboard.sort(key=lambda e: e['total_points'], reverse=True)
         return Response(leaderboard)

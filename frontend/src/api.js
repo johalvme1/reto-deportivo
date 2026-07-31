@@ -148,3 +148,53 @@ export function submitActivity(activityId) {
 export function getHistory() {
   return request('/points/history/');
 }
+
+export function getChallenges(active) {
+  const query = active ? '?active=true' : '';
+  return request(`/challenges/${query}`);
+}
+
+export function createChallenge(data) {
+  return request('/challenges/', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+export function updateChallenge(id, data) {
+  return request(`/challenges/${id}/`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+}
+
+export function deleteChallenge(id) {
+  return request(`/challenges/${id}/`, {
+    method: 'DELETE'
+  });
+}
+
+export function submitChallengeEvidence(challengeId, file, kind) {
+  const formData = new FormData();
+  formData.append(kind, file);
+  return fetch(`${API}/challenges/${challengeId}/submit/`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData
+  }).then(res => {
+    if (!res.ok) return res.json().then(e => { throw new Error(e.error); });
+    return res.json();
+  });
+}
+
+export function getChallengeSubmissions(challengeId, status) {
+  const query = status ? `?status=${status}` : '';
+  return request(`/challenges/${challengeId}/submissions/${query}`);
+}
+
+export function reviewSubmission(submissionId, status) {
+  return request(`/challenges/submissions/${submissionId}/review/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status })
+  });
+}
