@@ -39,10 +39,10 @@ export function login(email, password) {
   });
 }
 
-export function register(username, email, password) {
+export function register(name, email, password) {
   return request('/auth/register/', {
     method: 'POST',
-    body: JSON.stringify({ username, email, password })
+    body: JSON.stringify({ name, email, password })
   });
 }
 

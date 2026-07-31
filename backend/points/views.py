@@ -95,7 +95,7 @@ class LeaderboardView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        all_users = DailyPoint.objects.values('user', 'user__username', 'user__avatar').annotate(
+        all_users = DailyPoint.objects.values('user', 'user__username', 'user__name', 'user__avatar').annotate(
             image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='')),
             steps_count=Count('pk', filter=Q(steps__isnull=False)),
             activity_count=Count('pk', filter=Q(activity__isnull=False)),
@@ -106,7 +106,7 @@ class LeaderboardView(APIView):
             total = entry['image_count'] + entry['steps_count'] + entry['activity_count']
             leaderboard.append({
                 'id': entry['user'],
-                'name': entry['user__username'],
+                'name': entry['user__name'] or entry['user__username'],
                 'avatar': entry['user__avatar'],
                 'total_points': total
             })

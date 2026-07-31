@@ -69,7 +69,7 @@ export default function Dashboard() {
   return (
     <div>
       <div className="card">
-        <h1>Bienvenido, {user.username}!</h1>
+        <h1>Bienvenido, {user.name || user.username}!</h1>
         <div className="points-summary">
           <div className="points-summary-item">
             <div className="number">{data?.todayPoints ?? 0}</div>

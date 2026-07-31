@@ -23,7 +23,7 @@ export default function Register() {
 
     setLoading(true);
     try {
-      const data = await register(name, email, password); // name se usa como username
+      const data = await register(name, email, password);
       loginUser(data.token, data.user);
     } catch (err) {
       setError(err.message);

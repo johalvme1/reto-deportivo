@@ -16,7 +16,7 @@ export default function Navbar() {
           <Link to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>Admin</Link>
         )}
         <span style={{ color: '#888', fontSize: '0.85rem', padding: '0 8px' }}>
-          {user.username} <span className={`badge badge-${user.role}`}>{user.role}</span>
+          {user.name || user.username} <span className={`badge badge-${user.role}`}>{user.role}</span>
         </span>
         <button onClick={logout}>Salir</button>
       </div>
