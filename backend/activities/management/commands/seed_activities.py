@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
         created = 0
         for name in DEFAULT_ACTIVITIES:
-            _, was_created = Activity.objects.get_or_create(name=name, created_by=supervisor)
+            _, was_created = Activity.objects.get_or_create(name=name)
             if was_created:
                 created += 1
 
