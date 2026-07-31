@@ -3,7 +3,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
-from django.db.models import Count, Q, Sum, Value, IntegerField
+from django.db.models import Count, Q
 from .models import DailyPoint
 from .serializers import DailyPointSerializer
 from activities.models import Activity
@@ -45,19 +45,23 @@ class ImageUploadView(APIView):
         dp.save()
         return Response(DailyPointSerializer(dp).data)
 
-class CommentSubmitView(APIView):
+class StepsSubmitView(APIView):
     def post(self, request):
-        comment = request.data.get('comment', '').strip()
-        if not comment:
-            return Response({'error': 'Comentario requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        steps = request.data.get('steps')
+        try:
+            steps = int(steps)
+            if steps <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            return Response({'error': 'Cantidad de pasos inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
-        if dp.comment and not created:
-            return Response({'error': 'Ya agregaste un comentario hoy'}, status=status.HTTP_400_BAD_REQUEST)
+        if dp.steps and not created:
+            return Response({'error': 'Ya registraste tus pasos hoy'}, status=status.HTTP_400_BAD_REQUEST)
 
-        dp.comment = comment
+        dp.steps = steps
         dp.save()
         return Response(DailyPointSerializer(dp).data)
 
@@ -91,20 +95,15 @@ class LeaderboardView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        users = DailyPoint.objects.values('user', 'user__username', 'user__avatar').annotate(
-            total_points=Count('id')  # placeholder, will recalculate
-        ).order_by('-total_points')
-
-        # Recalculate properly
-        leaderboard = []
         all_users = DailyPoint.objects.values('user', 'user__username', 'user__avatar').annotate(
-            image_count=Count('pk', filter=Q(image__isnull=False)),
-            comment_count=Count('pk', filter=Q(comment__isnull=False)),
+            image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='')),
+            steps_count=Count('pk', filter=Q(steps__isnull=False)),
             activity_count=Count('pk', filter=Q(activity__isnull=False)),
-        ).order_by('-image_count', '-comment_count', '-activity_count')
+        ).order_by('-image_count', '-steps_count', '-activity_count')
 
+        leaderboard = []
         for entry in all_users:
-            total = entry['image_count'] + entry['comment_count'] + entry['activity_count']
+            total = entry['image_count'] + entry['steps_count'] + entry['activity_count']
             leaderboard.append({
                 'id': entry['user'],
                 'name': entry['user__username'],

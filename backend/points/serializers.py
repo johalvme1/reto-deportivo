@@ -8,5 +8,5 @@ class DailyPointSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DailyPoint
-        fields = ['id', 'user', 'date', 'image', 'comment', 'activity', 'activity_name', 'sport_name', 'points', 'created_at']
+        fields = ['id', 'user', 'date', 'image', 'steps', 'activity', 'activity_name', 'sport_name', 'points', 'created_at']
         read_only_fields = ['user', 'created_at']

@@ -126,10 +126,10 @@ export function uploadImage(file) {
   });
 }
 
-export function submitComment(comment) {
-  return request('/points/comment/', {
+export function submitSteps(steps) {
+  return request('/points/steps/', {
     method: 'POST',
-    body: JSON.stringify({ comment })
+    body: JSON.stringify({ steps })
   });
 }
 

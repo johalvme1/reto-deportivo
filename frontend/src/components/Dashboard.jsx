@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadImage, submitComment, submitActivity, getActivities, getHistory } from '../api';
+import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, getHistory } from '../api';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [activities, setActivities] = useState([]);
   const [history, setHistory] = useState([]);
-  const [comment, setComment] = useState('');
+  const [steps, setSteps] = useState('');
   const [selectedActivity, setSelectedActivity] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -42,13 +42,13 @@ export default function Dashboard() {
     } catch (err) { setError(err.message); }
   };
 
-  const handleComment = async () => {
-    if (!comment.trim()) return;
+  const handleSteps = async () => {
+    if (!steps || Number(steps) <= 0) return;
     setError(''); setSuccess('');
     try {
-      await submitComment(comment);
-      setSuccess('Comentario registrado! +1 punto');
-      setComment('');
+      await submitSteps(Number(steps));
+      setSuccess(`Pasos registrados (${steps})! +1 punto`);
+      setSteps('');
       loadData();
     } catch (err) { setError(err.message); }
   };
@@ -90,11 +90,11 @@ export default function Dashboard() {
       {success && <div className="alert alert-success">{success}</div>}
 
       <div className="points-grid">
-        <div className={`point-card ${dp?.image_url ? 'done' : ''}`}>
+        <div className={`point-card ${dp?.image ? 'done' : ''}`}>
           <div className="point-icon">📷</div>
           <h3>Subir imagen</h3>
           <div className="point-value">1 punto</div>
-          {dp?.image_url ? (
+          {dp?.image ? (
             <span style={{ color: '#06d6a0', fontWeight: 600, fontSize: '0.85rem' }}>Completado</span>
           ) : (
             <div style={{ marginTop: 8 }}>
@@ -104,16 +104,25 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className={`point-card ${dp?.comment ? 'done' : ''}`}>
-          <div className="point-icon">💬</div>
-          <h3>Comentar</h3>
+        <div className={`point-card ${dp?.steps ? 'done' : ''}`}>
+          <div className="point-icon">👟</div>
+          <h3>Registrar pasos</h3>
           <div className="point-value">1 punto</div>
-          {dp?.comment ? (
-            <span style={{ color: '#06d6a0', fontWeight: 600, fontSize: '0.85rem' }}>Completado</span>
+          {dp?.steps ? (
+            <span style={{ color: '#06d6a0', fontWeight: 600, fontSize: '0.85rem' }}>
+              Hecho: {dp.steps.toLocaleString('es')} pasos
+            </span>
           ) : (
             <div style={{ marginTop: 8 }}>
-              <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Escribe algo sobre tu día..." rows={2} />
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleComment} disabled={!comment.trim()}>Enviar</button>
+              <input
+                type="number"
+                min="1"
+                value={steps}
+                onChange={e => setSteps(e.target.value)}
+                placeholder="Pasos de hoy"
+                style={{ textAlign: 'center' }}
+              />
+              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={!steps || Number(steps) <= 0}>Registrar</button>
             </div>
           )}
         </div>
@@ -148,8 +157,8 @@ export default function Dashboard() {
               <div key={h.id} className="history-item">
                 <span className="history-date">{h.date}</span>
                 <span>
-                  {h.image_url && '📷 '}
-                  {h.comment && '💬 '}
+                  {h.image && '📷 '}
+                  {h.steps && `👟${h.steps.toLocaleString('es')} `}
                   {h.activity_name && `⚡${h.activity_name} `}
                 </span>
                 <span className="history-points">{h.points} pts</span>
