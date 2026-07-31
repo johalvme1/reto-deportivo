@@ -2,11 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getMessages, sendMessage } from '../api';
 
+const EMOJIS = [
+  '😀','😄','😁','😂','🤣','😊','😍','😘','😎','🤩',
+  '😜','🤗','🙂','😉','🥳','😅','😢','😭','😤','😡',
+  '🥰','😇','🤔','😴','🤯','🥺','💪','🏃','🚶','🚴',
+  '⚽','🏀','🏆','🥇','🔥','⭐','💯','❤️','👏','👍',
+  '👊','🙌','🤝','🎉','🎊','🏅','⏰','📷','👟','🙏'
+];
+
 export default function Chat() {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
+  const [showEmojis, setShowEmojis] = useState(false);
   const listRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -48,6 +57,11 @@ export default function Chat() {
     }
   };
 
+  const addEmoji = (emoji) => {
+    setText(t => t + emoji);
+    inputRef.current?.focus();
+  };
+
   const fmtTime = (iso) => {
     const d = new Date(iso);
     return d.toLocaleDateString('es', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
@@ -75,6 +89,7 @@ export default function Chat() {
         ))}
       </div>
       <form className="chat-form" onSubmit={handleSend}>
+        <button type="button" className="btn btn-sm" onClick={() => setShowEmojis(s => !s)} title="Emojis">😊</button>
         <input
           ref={inputRef}
           type="text"
@@ -85,6 +100,13 @@ export default function Chat() {
         />
         <button type="submit" className="btn btn-primary" disabled={!text.trim()}>Enviar</button>
       </form>
+      {showEmojis && (
+        <div className="emoji-picker">
+          {EMOJIS.map(e => (
+            <button key={e} type="button" className="emoji-btn" onClick={() => addEmoji(e)}>{e}</button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
