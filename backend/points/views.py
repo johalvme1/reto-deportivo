@@ -40,8 +40,8 @@ class ImageUploadView(APIView):
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
-        if dp.image and not created:
-            return Response({'error': 'Ya subiste una imagen hoy'}, status=status.HTTP_400_BAD_REQUEST)
+        if dp.image:
+            return Response({'error': 'La evidencia de hoy ya fue registrada y está bloqueada'}, status=status.HTTP_400_BAD_REQUEST)
 
         dp.image = file
         dp.save()
@@ -60,8 +60,8 @@ class StepsSubmitView(APIView):
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
-        if dp.steps and not created:
-            return Response({'error': 'Ya registraste tus pasos hoy'}, status=status.HTTP_400_BAD_REQUEST)
+        if dp.steps:
+            return Response({'error': 'Los pasos de hoy ya fueron registrados y están bloqueados'}, status=status.HTTP_400_BAD_REQUEST)
 
         dp.steps = steps
         dp.save()
@@ -81,8 +81,8 @@ class ActivitySubmitView(APIView):
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
-        if dp.activity_id and not created:
-            return Response({'error': 'Ya registraste una actividad hoy'}, status=status.HTTP_400_BAD_REQUEST)
+        if dp.activity_id:
+            return Response({'error': 'La actividad de hoy ya fue registrada y está bloqueada'}, status=status.HTTP_400_BAD_REQUEST)
 
         dp.activity = activity
         dp.save()

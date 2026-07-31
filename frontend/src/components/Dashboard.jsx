@@ -2,6 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals } from '../api';
 
+function fmtCountdown(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
@@ -16,8 +28,14 @@ export default function Dashboard() {
   const [evidenceKind, setEvidenceKind] = useState('image');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [now, setNow] = useState(Date.now());
   const fileRef = useRef();
   const evidenceFileRef = useRef();
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -127,13 +145,20 @@ export default function Dashboard() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {dp?.image && dp?.steps && dp?.activity_id && (
+        <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <strong>Día completado</strong>
+          <span>🔒 Registros de hoy bloqueados</span>
+        </div>
+      )}
+
       <div className="points-grid">
         <div className={`point-card ${dp?.image ? 'done' : ''}`}>
           <div className="point-icon">📷</div>
           <h3>Subir imagen</h3>
           <div className="point-value">1 punto</div>
           {dp?.image ? (
-            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>Completado</span>
+            <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>Completado 🔒</span>
           ) : (
             <div style={{ marginTop: 8 }}>
               <input type="file" ref={fileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6 }} />
@@ -148,7 +173,7 @@ export default function Dashboard() {
           <div className="point-value">1 punto</div>
           {dp?.steps ? (
             <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
-              Hecho: {dp.steps.toLocaleString('es')} pasos
+              Hecho: {dp.steps.toLocaleString('es')} pasos 🔒
             </span>
           ) : (
             <div style={{ marginTop: 8 }}>
@@ -171,7 +196,7 @@ export default function Dashboard() {
           <div className="point-value">1 punto</div>
           {dp?.activity_id ? (
             <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
-              Hecho: {dp.activity_name}
+              Hecho: {dp.activity_name} 🔒
             </span>
           ) : (
             <div style={{ marginTop: 8 }}>
@@ -203,40 +228,62 @@ export default function Dashboard() {
         <div className="card">
           <h2>Retos Extra</h2>
           <div className="challenge-list">
-            {challenges.map(c => (
-              <div key={c.id} className="challenge-item">
-                <div style={{ flex: 1 }}>
-                  <strong>{c.title}</strong>
-                  <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{c.points} pts</span>
-                  {c.date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>📅 {c.date}</span>}
-                  {c.description && <div style={{ fontSize: '0.85rem', color: '#b088c0' }}>{c.description}</div>}
-                  {c.user_submission && (
-                    <div style={{ marginTop: 6 }}>
-                      <span className={`badge ${c.user_submission.status === 'approved' ? 'badge-supervisor' : c.user_submission.status === 'rejected' ? 'badge-participant' : ''}`}>
-                        {c.user_submission.status === 'approved' ? 'Aprobado +' + c.points + ' pts' : c.user_submission.status === 'rejected' ? 'Rechazado' : 'Pendiente de revisión'}
+            {challenges.map(c => {
+              const start = c.start_date ? new Date(c.start_date).getTime() : null;
+              const end = c.end_date ? new Date(c.end_date).getTime() : null;
+              const approved = c.user_submission?.status === 'approved';
+              const pending = c.user_submission?.status === 'pending';
+              const started = start ? now >= start : true;
+              const finished = end ? now >= end : false;
+              const inWindow = started && !finished;
+              let counter = null;
+              if (start && end && !approved && !finished) {
+                if (!started) counter = { label: 'Inicia en', target: start };
+                else counter = { label: 'Quedan', target: end };
+              }
+              const canSubmit = inWindow && !approved && !pending && !c.user_submission;
+              return (
+                <div key={c.id} className="challenge-item">
+                  <div style={{ flex: 1 }}>
+                    <strong>{c.title}</strong>
+                    <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{c.points} pts</span>
+                    {counter && (
+                      <span className="badge" style={{ marginLeft: 8, background: '#fff3d6', color: '#8a6d1a', fontSize: '0.8rem' }}>
+                        ⏳ {counter.label}: {fmtCountdown(counter.target - now)}
                       </span>
+                    )}
+                    {approved && <span className="badge" style={{ marginLeft: 8, background: '#06d6a0', color: '#0d5c43' }}>🏅 Completado</span>}
+                    {finished && !approved && <span className="badge badge-participant" style={{ marginLeft: 8 }}>🔒 Reto terminado</span>}
+                    {!finished && !started && <span className="badge badge-participant" style={{ marginLeft: 8 }}>🔒 Aún no inicia</span>}
+                    {c.description && <div style={{ fontSize: '0.85rem', color: '#b088c0' }}>{c.description}</div>}
+                    {c.user_submission && (
+                      <div style={{ marginTop: 6 }}>
+                        <span className={`badge ${c.user_submission.status === 'approved' ? 'badge-supervisor' : c.user_submission.status === 'rejected' ? 'badge-participant' : ''}`}>
+                          {c.user_submission.status === 'approved' ? 'Aprobado +' + c.points + ' pts' : c.user_submission.status === 'rejected' ? 'Rechazado' : 'Pendiente de revisión'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {evidenceFor === c.id ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                      <select value={evidenceKind} onChange={e => setEvidenceKind(e.target.value)}>
+                        <option value="image">Foto</option>
+                        <option value="video">Video</option>
+                      </select>
+                      <input type="file" ref={evidenceFileRef} accept={evidenceKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem' }} />
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="btn btn-primary btn-sm" onClick={handleEvidence}>Enviar evidencia</button>
+                        <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceKind('image'); evidenceFileRef.current.value = ''; }}>Cancelar</button>
+                      </div>
                     </div>
+                  ) : (
+                    canSubmit && (
+                      <button className="btn btn-primary btn-sm" onClick={() => { setEvidenceFor(c.id); setEvidenceKind('image'); }}>Enviar evidencia</button>
+                    )
                   )}
                 </div>
-                {evidenceFor === c.id ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                    <select value={evidenceKind} onChange={e => setEvidenceKind(e.target.value)}>
-                      <option value="image">Foto</option>
-                      <option value="video">Video</option>
-                    </select>
-                    <input type="file" ref={evidenceFileRef} accept={evidenceKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem' }} />
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn btn-primary btn-sm" onClick={handleEvidence}>Enviar evidencia</button>
-                      <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceKind('image'); evidenceFileRef.current.value = ''; }}>Cancelar</button>
-                    </div>
-                  </div>
-                ) : (
-                  !c.user_submission && (
-                    <button className="btn btn-primary btn-sm" onClick={() => { setEvidenceFor(c.id); setEvidenceKind('image'); }}>Enviar evidencia</button>
-                  )
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

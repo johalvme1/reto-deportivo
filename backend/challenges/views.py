@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
+from django.utils import timezone
 from .models import Challenge, ChallengeSubmission, Medal
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
 
@@ -44,6 +45,12 @@ class SubmitEvidenceView(APIView):
         if not challenge.active:
             return Response({'error': 'Este reto no está activo'}, status=status.HTTP_400_BAD_REQUEST)
 
+        now = timezone.now()
+        if challenge.start_date and now < challenge.start_date:
+            return Response({'error': 'Este reto aún no ha iniciado'}, status=status.HTTP_400_BAD_REQUEST)
+        if challenge.end_date and now > challenge.end_date:
+            return Response({'error': 'Este reto ya terminó, no se pueden enviar evidencias'}, status=status.HTTP_400_BAD_REQUEST)
+
         image = request.FILES.get('image')
         video = request.FILES.get('video')
 
@@ -53,6 +60,8 @@ class SubmitEvidenceView(APIView):
         existing = ChallengeSubmission.objects.filter(challenge=challenge, user=request.user).first()
         if existing and existing.status == 'pending':
             return Response({'error': 'Ya tienes una evidencia pendiente de revisión para este reto'}, status=status.HTTP_400_BAD_REQUEST)
+        if existing and existing.status == 'approved':
+            return Response({'error': 'Ya completaste este reto'}, status=status.HTTP_400_BAD_REQUEST)
 
         submission = ChallengeSubmission.objects.create(
             challenge=challenge,

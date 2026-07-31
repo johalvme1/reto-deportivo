@@ -7,7 +7,7 @@ class ChallengeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Challenge
-        fields = ['id', 'title', 'description', 'points', 'date', 'active', 'created_by', 'created_at', 'submissions_count', 'user_submission']
+        fields = ['id', 'title', 'description', 'points', 'start_date', 'end_date', 'active', 'created_by', 'created_at', 'submissions_count', 'user_submission']
         read_only_fields = ['created_by', 'created_at']
 
     def get_submissions_count(self, obj):

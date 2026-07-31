@@ -6,7 +6,8 @@ function ChallengeManager() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [points, setPoints] = useState(5);
-  const [date, setDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [submissions, setSubmissions] = useState([]);
@@ -25,8 +26,8 @@ function ChallengeManager() {
     e.preventDefault();
     if (!title.trim() || !points) return;
     try {
-      await createChallenge({ title: title.trim(), description, points: Number(points), date: date || null });
-      setTitle(''); setDescription(''); setPoints(5); setDate('');
+      await createChallenge({ title: title.trim(), description, points: Number(points), start_date: startDate || null, end_date: endDate || null });
+      setTitle(''); setDescription(''); setPoints(5); setStartDate(''); setEndDate('');
       load();
     } catch (err) { alert(err.message); }
   };
@@ -45,9 +46,10 @@ function ChallengeManager() {
     if (!newTitle) return;
     const newDesc = prompt('Descripción:', c.description || '');
     const newPoints = prompt('Puntos extra:', c.points);
-    const newDate = prompt('Fecha límite (YYYY-MM-DD):', c.date || '');
+    const newStart = prompt('Inicio (YYYY-MM-DDTHH:MM):', (c.start_date || '').replace('T', 'T').slice(0, 16));
+    const newEnd = prompt('Fin (YYYY-MM-DDTHH:MM):', (c.end_date || '').replace('T', 'T').slice(0, 16));
     try {
-      await updateChallenge(id, { title: newTitle, description: newDesc, points: Number(newPoints) || 0, date: newDate || null, active: c.active });
+      await updateChallenge(id, { title: newTitle, description: newDesc, points: Number(newPoints) || 0, start_date: newStart || null, end_date: newEnd || null, active: c.active });
       load();
     } catch (err) { alert(err.message); }
   };
@@ -76,7 +78,8 @@ function ChallengeManager() {
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título del reto" required />
         <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción" />
         <input type="number" min="1" value={points} onChange={e => setPoints(e.target.value)} placeholder="Puntos extra" style={{ width: 110 }} />
-        <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        <input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        <input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} />
         <button type="submit" className="btn btn-primary">Crear Reto</button>
       </form>
 
@@ -87,7 +90,8 @@ function ChallengeManager() {
               <strong>{c.title}</strong>
               <span className="badge" style={{ marginLeft: 8 }}>{c.points} pts</span>
               {c.active ? <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Activo</span> : <span className="badge badge-participant" style={{ marginLeft: 8 }}>Inactivo</span>}
-              {c.date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>📅 {c.date}</span>}
+              {c.start_date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>▶ Inicia: {new Date(c.start_date).toLocaleString('es')}</span>}
+              {c.end_date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>⏱ Termina: {new Date(c.end_date).toLocaleString('es')}</span>}
               {c.description && <div style={{ fontSize: '0.85rem', color: '#b088c0' }}>{c.description}</div>}
               <div style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>{c.submissions_count} evidencias</div>
             </div>
