@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getLeaderboard } from '../api';
 
 export default function Leaderboard() {
@@ -17,7 +18,10 @@ export default function Leaderboard() {
 
   return (
     <div className="card">
-      <h1>Ranking de Participantes</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <h1>Ranking de Participantes</h1>
+        <Link to="/evidence" className="btn btn-primary btn-sm">Ver evidencias de compañeros</Link>
+      </div>
       {ranking.length === 0 ? (
         <p style={{ color: '#b088c0' }}>Aún no hay puntos registrados</p>
       ) : (

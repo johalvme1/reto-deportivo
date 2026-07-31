@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission } from '../api';
 
 function ChallengeManager() {
@@ -6,6 +6,7 @@ function ChallengeManager() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [points, setPoints] = useState(5);
+  const [videoFile, setVideoFile] = useState(null);
   const [startDate, setStartDate] = useState('');
   const [startTime, setStartTime] = useState('00:00');
   const [endDate, setEndDate] = useState('');
@@ -30,8 +31,8 @@ function ChallengeManager() {
     e.preventDefault();
     if (!title.trim() || !points) return;
     try {
-      await createChallenge({ title: title.trim(), description, points: Number(points), start_date: buildDateTime(startDate, startTime), end_date: buildDateTime(endDate, endTime) });
-      setTitle(''); setDescription(''); setPoints(5); setStartDate(''); setStartTime('00:00'); setEndDate(''); setEndTime('23:59');
+      await createChallenge({ title: title.trim(), description, points: Number(points), start_date: buildDateTime(startDate, startTime), end_date: buildDateTime(endDate, endTime) }, videoFile);
+      setTitle(''); setDescription(''); setPoints(5); setStartDate(''); setStartTime('00:00'); setEndDate(''); setEndTime('23:59'); setVideoFile(null);
       load();
     } catch (err) { alert(err.message); }
   };
@@ -107,6 +108,11 @@ function ChallengeManager() {
             <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} style={{ marginTop: 6 }} />
           </div>
         </div>
+        <div className="form-group">
+          <label>Video explicativo (opcional)</label>
+          <input type="file" accept="video/*" onChange={e => setVideoFile(e.target.files?.[0] || null)} />
+          <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Los participantes podrán verlo aunque el reto aún no inicie.</p>
+        </div>
         <button type="submit" className="btn btn-primary">Crear Reto</button>
       </form>
 
@@ -116,6 +122,7 @@ function ChallengeManager() {
             <div style={{ flex: 1 }}>
               <strong>{c.title}</strong>
               <span className="badge" style={{ marginLeft: 8 }}>{c.points} pts</span>
+              {c.video && <span className="badge" style={{ marginLeft: 8, background: '#e0f0ff', color: '#1a5f8a' }}>🎬 Video explicativo</span>}
               {c.active ? <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Activo</span> : <span className="badge badge-participant" style={{ marginLeft: 8 }}>Inactivo</span>}
               {c.start_date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>▶ Inicia: {new Date(c.start_date).toLocaleString('es')}</span>}
               {c.end_date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>⏱ Termina: {new Date(c.end_date).toLocaleString('es')}</span>}

@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ChallengeViewSet, SubmitEvidenceView, ReviewSubmissionView, ChallengeSubmissionsView, MySubmissionsView, MedalsView
+from .views import ChallengeViewSet, SubmitEvidenceView, ReviewSubmissionView, ChallengeSubmissionsView, MySubmissionsView, MedalsView, EvidenceGalleryView
 
 router = DefaultRouter()
 router.register(r'', ChallengeViewSet)
 
 urlpatterns = [
+    path('evidence/', EvidenceGalleryView.as_view(), name='evidence-gallery'),
     path('medals/', MedalsView.as_view(), name='medals'),
     path('submissions/mine/', MySubmissionsView.as_view(), name='my-submissions'),
     path('submissions/<int:submission_id>/review/', ReviewSubmissionView.as_view(), name='review-submission'),

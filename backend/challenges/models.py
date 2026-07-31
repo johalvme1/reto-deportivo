@@ -5,6 +5,7 @@ class Challenge(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     points = models.PositiveIntegerField(default=5)
+    video = models.FileField(upload_to='challenge_videos/', null=True, blank=True, help_text='Video explicativo opcional del reto')
     start_date = models.DateTimeField(null=True, blank=True, help_text='Fecha y hora de inicio del reto')
     end_date = models.DateTimeField(null=True, blank=True, help_text='Fecha y hora límite del reto')
     active = models.BooleanField(default=True)

@@ -161,7 +161,22 @@ export function getChallenges(active) {
   return request(`/challenges/${query}`);
 }
 
-export function createChallenge(data) {
+export function createChallenge(data, file) {
+  if (file) {
+    const formData = new FormData();
+    Object.entries(data).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && v !== '') formData.append(k, v);
+    });
+    formData.append('video', file);
+    return fetch(`${API}/challenges/`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: formData
+    }).then(res => {
+      if (!res.ok) return res.json().then(e => { throw new Error(e.error || e.detail || 'Error del servidor'); });
+      return res.json();
+    });
+  }
   return request('/challenges/', {
     method: 'POST',
     body: JSON.stringify(data)
@@ -170,7 +185,7 @@ export function createChallenge(data) {
 
 export function updateChallenge(id, data) {
   return request(`/challenges/${id}/`, {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(data)
   });
 }
@@ -209,4 +224,8 @@ export function reviewSubmission(submissionId, status) {
 export function getMedals(mine) {
   const query = mine ? '?mine=true' : '';
   return request(`/challenges/medals/${query}`);
+}
+
+export function getEvidence() {
+  return request('/challenges/evidence/');
 }

@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from django.utils import timezone
 from .models import Challenge, ChallengeSubmission, Medal
@@ -17,6 +17,7 @@ class ChallengeViewSet(viewsets.ModelViewSet):
     queryset = Challenge.objects.all()
     serializer_class = ChallengeSerializer
     permission_classes = [permissions.IsAuthenticated, IsSupervisor]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -101,6 +102,18 @@ class MedalsView(APIView):
         if request.query_params.get('mine') == 'true':
             medals = medals.filter(user=request.user)
         return Response(MedalSerializer(medals, many=True).data)
+
+class EvidenceGalleryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        subs = (
+            ChallengeSubmission.objects.filter(status='approved')
+            .exclude(user__is_superuser=True)
+            .select_related('user', 'challenge')
+            .order_by('-created_at')[:60]
+        )
+        return Response(ChallengeSubmissionSerializer(subs, many=True).data)
 
 class ChallengeSubmissionsView(APIView):
     permission_classes = [permissions.IsAuthenticated]

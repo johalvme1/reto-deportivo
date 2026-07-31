@@ -264,6 +264,11 @@ export default function Dashboard() {
                     {finished && !approved && <span className="badge badge-participant" style={{ marginLeft: 8 }}>🔒 Reto terminado</span>}
                     {!finished && !started && <span className="badge badge-participant" style={{ marginLeft: 8 }}>🔒 Aún no inicia</span>}
                     {c.description && <div style={{ fontSize: '0.85rem', color: '#b088c0' }}>{c.description}</div>}
+                    {c.video && (
+                      <div style={{ marginTop: 8 }}>
+                        <video src={c.video} controls preload="metadata" style={{ width: '100%', maxHeight: 260, borderRadius: 10, background: '#000' }} />
+                      </div>
+                    )}
                     {c.user_submission && (
                       <div style={{ marginTop: 6 }}>
                         <span className={`badge ${c.user_submission.status === 'approved' ? 'badge-supervisor' : c.user_submission.status === 'rejected' ? 'badge-participant' : ''}`}>
