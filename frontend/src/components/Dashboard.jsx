@@ -148,7 +148,7 @@ export default function Dashboard() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      {dp?.image && dp?.steps && dp?.steps_image && dp?.activity_id && (
+      {dp?.image && dp?.steps && dp?.steps_image && dp?.activity && (
         <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong>Día completado</strong>
           <span>🔒 Registros de hoy bloqueados</span>
@@ -197,12 +197,12 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className={`point-card ${dp?.activity_id ? 'done' : ''}`}>
-          {dp?.activity_id && <span className="lock-badge">🔒 Bloqueado</span>}
+        <div className={`point-card ${dp?.activity ? 'done' : ''}`}>
+          {dp?.activity && <span className="lock-badge">🔒 Bloqueado</span>}
           <div className="point-icon">⚡</div>
           <h3>Actividad</h3>
           <div className="point-value">1 punto</div>
-          {dp?.activity_id ? (
+          {dp?.activity ? (
             <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
               Hecho: {dp.activity_name} 🔒
             </span>
