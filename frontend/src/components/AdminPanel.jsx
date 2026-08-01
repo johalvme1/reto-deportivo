@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission } from '../api';
+import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser } from '../api';
 
 function ChallengeManager() {
   const [challenges, setChallenges] = useState([]);
@@ -15,6 +15,7 @@ function ChallengeManager() {
   const [selected, setSelected] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [reviews, setReviews] = useState({});
+  const [pendingUsers, setPendingUsers] = useState([]);
 
   const buildDateTime = (d, t) => d ? `${d}T${t || '00:00'}` : null;
 
@@ -22,6 +23,26 @@ function ChallengeManager() {
     try { setChallenges(await getChallenges()); } catch {}
   };
   useEffect(() => { load(); }, []);
+
+  const loadPending = async () => {
+    try { setPendingUsers(await getPendingUsers()); } catch {}
+  };
+  useEffect(() => { loadPending(); }, []);
+
+  const handleApprove = async (id) => {
+    try {
+      await reviewUser(id, 'approve');
+      loadPending();
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleRejectUser = async (id) => {
+    if (!confirm('¿Rechazar a este usuario? Ya no podrá iniciar sesión.')) return;
+    try {
+      await reviewUser(id, 'reject');
+      loadPending();
+    } catch (err) { alert(err.message); }
+  };
 
   const loadSubmissions = async (challengeId) => {
     setSelected(challengeId);
@@ -195,6 +216,29 @@ function ChallengeManager() {
           ))}
         </div>
       )}
+
+      <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #f1e0f5' }}>
+        <h2>Acreditaciones de nuevos ingresos</h2>
+        <p style={{ color: '#b088c0', fontSize: '0.85rem', marginBottom: 12 }}>
+          Usuarios que se registraron y esperan tu aprobación para poder entrar al reto.
+        </p>
+        {pendingUsers.length === 0 && <p style={{ color: '#b088c0' }}>No hay solicitudes pendientes</p>}
+        {pendingUsers.map(u => (
+          <div key={u.id} className="challenge-item">
+            <div style={{ flex: 1 }}>
+              <strong>{u.name || u.username}</strong>
+              <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>{u.email}</span>
+              <div style={{ fontSize: '0.78rem', color: '#b088c0' }}>
+                Registrado el {new Date(u.date_joined).toLocaleString('es')}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button className="btn btn-success btn-sm" onClick={() => handleApprove(u.id)}>Aprobar</button>
+              <button className="btn btn-danger btn-sm" onClick={() => handleRejectUser(u.id)}>Rechazar</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

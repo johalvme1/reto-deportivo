@@ -31,9 +31,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             name=name,
         )
+        user.is_approved = False
+        user.save(update_fields=['is_approved'])
         return user
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'name', 'email', 'role', 'avatar', 'is_superuser']
+        fields = ['id', 'username', 'name', 'email', 'role', 'avatar', 'is_superuser', 'is_approved', 'date_joined']

@@ -60,6 +60,17 @@ export function getProfile() {
   return request('/auth/profile/');
 }
 
+export function getPendingUsers() {
+  return request('/auth/pending-users/');
+}
+
+export function reviewUser(userId, action) {
+  return request('/auth/users/review/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, action })
+  });
+}
+
 export function updateProfile(data) {
   return request('/auth/profile/', {
     method: 'PUT',
