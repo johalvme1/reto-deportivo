@@ -42,6 +42,9 @@ class ChallengeSubmission(models.Model):
     image = models.ImageField(upload_to='challenges/', null=True, blank=True)
     video = models.FileField(upload_to='challenges/', null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    points_awarded = models.PositiveIntegerField(default=0, help_text='Puntos asignados por el supervisor')
+    review_comment = models.TextField(blank=True, default='', help_text='Comentario del supervisor para el participante')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

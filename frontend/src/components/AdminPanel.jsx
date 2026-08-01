@@ -14,6 +14,7 @@ function ChallengeManager() {
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [submissions, setSubmissions] = useState([]);
+  const [reviews, setReviews] = useState({});
 
   const buildDateTime = (d, t) => d ? `${d}T${t || '00:00'}` : null;
 
@@ -72,9 +73,15 @@ function ChallengeManager() {
     } catch (err) { alert(err.message); }
   };
 
+  const setReview = (id, field, value) => setReviews(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+
   const handleReview = async (submissionId, status) => {
+    const r = reviews[submissionId] || {};
+    const points = status === 'approved' ? Number(r.points) || 0 : 0;
+    const comment = (r.comment || '').trim();
     try {
-      await reviewSubmission(submissionId, status);
+      await reviewSubmission(submissionId, status, points, comment);
+      setReviews(prev => { const n = { ...prev }; delete n[submissionId]; return n; });
       loadSubmissions(selected);
       load();
     } catch (err) { alert(err.message); }
@@ -151,15 +158,37 @@ function ChallengeManager() {
                 <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`} style={{ marginLeft: 8 }}>
                   {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
                 </span>
+                {s.status === 'approved' && <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{s.points_awarded} pts</span>}
                 <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {s.image && <a href={s.image} target="_blank" rel="noreferrer"><img src={s.image} alt="evidencia" style={{ height: 80, borderRadius: 6 }} /></a>}
                   {s.video && <a href={s.video} target="_blank" rel="noreferrer"><video src={s.video} controls style={{ height: 80, borderRadius: 6 }} /></a>}
                 </div>
+                {s.review_comment && (
+                  <div style={{ marginTop: 6, fontSize: '0.82rem', color: '#b088c0' }}>💬 {s.review_comment}</div>
+                )}
               </div>
               {s.status === 'pending' && (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn btn-success btn-sm" onClick={() => handleReview(s.id, 'approved')}>Aprobar (+{s.challenge_points} pts)</button>
-                  <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 280 }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max={s.challenge_points}
+                    placeholder={`Puntos (0-${s.challenge_points})`}
+                    value={reviews[s.id]?.points ?? s.challenge_points}
+                    onChange={e => setReview(s.id, 'points', e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Comentario (ej: lo hiciste muy bien...)"
+                    value={reviews[s.id]?.comment ?? ''}
+                    onChange={e => setReview(s.id, 'comment', e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button className="btn btn-success btn-sm" onClick={() => handleReview(s.id, 'approved')}>Aprobar</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
+                  </div>
                 </div>
               )}
             </div>

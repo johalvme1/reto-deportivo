@@ -116,7 +116,7 @@ class LeaderboardView(APIView):
         daily_map = {entry['user']: entry for entry in daily_agg}
 
         challenge_agg = ChallengeSubmission.objects.filter(status='approved').values('user').annotate(
-            extra_points=Sum(F('challenge__points'))
+            extra_points=Sum('points_awarded')
         )
         extra_map = {entry['user']: entry['extra_points'] for entry in challenge_agg}
 

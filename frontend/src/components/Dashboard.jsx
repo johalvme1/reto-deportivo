@@ -252,8 +252,9 @@ export default function Dashboard() {
             {challenges.map(c => {
               const start = c.start_date ? new Date(c.start_date).getTime() : null;
               const end = c.end_date ? new Date(c.end_date).getTime() : null;
-              const approved = c.user_submission?.status === 'approved';
-              const pending = c.user_submission?.status === 'pending';
+              const us = c.user_submission;
+              const approved = !!us?.submissions?.some(s => s.status === 'approved');
+              const pending = !!us?.submissions?.some(s => s.status === 'pending');
               const started = start ? now >= start : true;
               const finished = end ? now >= end : false;
               const inWindow = started && !finished;
@@ -262,7 +263,7 @@ export default function Dashboard() {
                 if (!started) counter = { label: 'Inicia en', target: start };
                 else counter = { label: 'Quedan', target: end };
               }
-              const canSubmit = c.is_active && inWindow && !approved && !pending && !c.user_submission;
+              const canSubmit = c.is_active && inWindow && (!us || us.active_count < us.max);
               return (
                 <div key={c.id} className="challenge-item">
                   <div style={{ flex: 1 }}>
@@ -283,11 +284,17 @@ export default function Dashboard() {
                         <video src={c.video} controls preload="metadata" style={{ width: '100%', maxHeight: 260, borderRadius: 10, background: '#000' }} />
                       </div>
                     )}
-                    {c.user_submission && (
+                    {us && us.submissions.length > 0 && (
                       <div style={{ marginTop: 6 }}>
-                        <span className={`badge ${c.user_submission.status === 'approved' ? 'badge-supervisor' : c.user_submission.status === 'rejected' ? 'badge-participant' : ''}`}>
-                          {c.user_submission.status === 'approved' ? 'Aprobado +' + c.points + ' pts' : c.user_submission.status === 'rejected' ? 'Rechazado' : 'Pendiente de revisión'}
-                        </span>
+                        {us.submissions.map(s => (
+                          <div key={s.id} style={{ marginBottom: 4 }}>
+                            <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`}>
+                              {s.status === 'approved' ? `Aprobado +${s.points_awarded} pts` : s.status === 'rejected' ? 'Rechazado' : 'Pendiente de revisión'}
+                            </span>
+                            {s.review_comment && <span style={{ fontSize: '0.78rem', color: '#b088c0', marginLeft: 8 }}>💬 {s.review_comment}</span>}
+                          </div>
+                        ))}
+                        <div style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>{us.active_count}/{us.max} evidencias enviadas</div>
                       </div>
                     )}
                   </div>

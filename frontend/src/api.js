@@ -229,10 +229,10 @@ export function getChallengeSubmissions(challengeId, status) {
   return request(`/challenges/${challengeId}/submissions/${query}`);
 }
 
-export function reviewSubmission(submissionId, status) {
+export function reviewSubmission(submissionId, status, points, comment) {
   return request(`/challenges/submissions/${submissionId}/review/`, {
     method: 'PATCH',
-    body: JSON.stringify({ status })
+    body: JSON.stringify({ status, points, comment })
   });
 }
 

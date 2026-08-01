@@ -61,11 +61,10 @@ class SubmitEvidenceView(APIView):
         if not image and not video:
             return Response({'error': 'Debes subir una foto o un video como evidencia'}, status=status.HTTP_400_BAD_REQUEST)
 
-        existing = ChallengeSubmission.objects.filter(challenge=challenge, user=request.user).first()
-        if existing and existing.status == 'pending':
-            return Response({'error': 'Ya tienes una evidencia pendiente de revisión para este reto'}, status=status.HTTP_400_BAD_REQUEST)
-        if existing and existing.status == 'approved':
-            return Response({'error': 'Ya completaste este reto'}, status=status.HTTP_400_BAD_REQUEST)
+        MAX_SUBMISSIONS = 3
+        active_count = ChallengeSubmission.objects.filter(challenge=challenge, user=request.user).exclude(status='rejected').count()
+        if active_count >= MAX_SUBMISSIONS:
+            return Response({'error': f'Ya subiste las {MAX_SUBMISSIONS} evidencias permitidas para este reto'}, status=status.HTTP_400_BAD_REQUEST)
 
         submission = ChallengeSubmission.objects.create(
             challenge=challenge,
@@ -91,11 +90,30 @@ class ReviewSubmissionView(APIView):
         if submission.status == 'approved' and decision == 'approved':
             return Response({'error': 'Esta evidencia ya fue aprobada'}, status=status.HTTP_400_BAD_REQUEST)
 
-        submission.status = decision
-        submission.save()
+        comment = request.data.get('comment')
+        if comment is not None:
+            submission.review_comment = str(comment).strip()
+        submission.reviewed_at = timezone.now()
 
         if decision == 'approved':
+            try:
+                points = int(request.data.get('points'))
+            except (TypeError, ValueError):
+                points = submission.points_awarded or submission.challenge.points
+            points = max(0, min(points, submission.challenge.points))
+            submission.points_awarded = points
+            submission.status = 'approved'
             Medal.objects.get_or_create(user=submission.user, challenge=submission.challenge)
+        else:
+            submission.status = 'rejected'
+            submission.points_awarded = 0
+            has_other_approved = submission.challenge.submissions.filter(
+                user=submission.user, status='approved'
+            ).exclude(id=submission.id).exists()
+            if not has_other_approved:
+                Medal.objects.filter(user=submission.user, challenge=submission.challenge).delete()
+
+        submission.save()
 
         return Response(ChallengeSubmissionSerializer(submission).data)
 
