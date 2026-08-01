@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [newActivity, setNewActivity] = useState('');
   const [evidenceFor, setEvidenceFor] = useState(null);
   const [evidenceKind, setEvidenceKind] = useState('image');
+  const [evidenceSlot, setEvidenceSlot] = useState(1);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [now, setNow] = useState(Date.now());
@@ -123,9 +124,10 @@ export default function Dashboard() {
     setError(''); setSuccess('');
     try {
       await submitChallengeEvidence(evidenceFor, file, evidenceKind);
-      setSuccess('Evidencia enviada! Espera la aprobación del supervisor para sumar puntos.');
+      setSuccess(`Evidencia ${evidenceSlot} enviada! Espera la aprobación del supervisor para sumar puntos.`);
       setEvidenceFor(null);
       setEvidenceKind('image');
+      setEvidenceSlot(1);
       evidenceFileRef.current.value = '';
       loadData();
     } catch (err) { setError(err.message); }
@@ -300,6 +302,7 @@ export default function Dashboard() {
                   </div>
                   {evidenceFor === c.id ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                      <strong style={{ fontSize: '0.8rem', color: '#d9629f' }}>Evidencia {evidenceSlot}</strong>
                       <select value={evidenceKind} onChange={e => setEvidenceKind(e.target.value)}>
                         <option value="image">Foto</option>
                         <option value="video">Video</option>
@@ -307,12 +310,29 @@ export default function Dashboard() {
                       <input type="file" ref={evidenceFileRef} accept={evidenceKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem' }} />
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button className="btn btn-primary btn-sm" onClick={handleEvidence}>Enviar evidencia</button>
-                        <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceKind('image'); evidenceFileRef.current.value = ''; }}>Cancelar</button>
+                        <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceKind('image'); setEvidenceSlot(1); evidenceFileRef.current.value = ''; }}>Cancelar</button>
                       </div>
                     </div>
                   ) : (
                     canSubmit && (
-                      <button className="btn btn-primary btn-sm" onClick={() => { setEvidenceFor(c.id); setEvidenceKind('image'); }}>Enviar evidencia</button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {[1, 2, 3].map(n => {
+                            const used = (us?.active_count ?? 0) >= n;
+                            return (
+                              <button
+                                key={n}
+                                className="btn btn-primary btn-sm"
+                                disabled={used}
+                                onClick={() => { setEvidenceFor(c.id); setEvidenceSlot(n); setEvidenceKind('image'); }}
+                              >
+                                Enviar evidencia {n}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: '#b088c0' }}>Puedes enviar hasta 3 evidencias por reto.</span>
+                      </div>
                     )
                   )}
                 </div>
