@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser } from '../api';
+import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser } from '../api';
 
 function ChallengeManager() {
   const [challenges, setChallenges] = useState([]);
@@ -95,6 +95,15 @@ function ChallengeManager() {
   };
 
   const setReview = (id, field, value) => setReviews(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+
+  const handleDeleteSubmission = async (submissionId) => {
+    if (!confirm('¿Eliminar esta evidencia? Liberará un espacio para que el participante la suba de nuevo.')) return;
+    try {
+      await deleteSubmission(submissionId);
+      loadSubmissions(selected);
+      load();
+    } catch (err) { alert(err.message); }
+  };
 
   const handleReview = async (submissionId, status) => {
     const r = reviews[submissionId] || {};
@@ -209,7 +218,13 @@ function ChallengeManager() {
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button className="btn btn-success btn-sm" onClick={() => handleReview(s.id, 'approved')}>Aprobar</button>
                     <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
+                    <button className="btn btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
                   </div>
+                </div>
+              )}
+              {s.status !== 'pending' && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
                 </div>
               )}
             </div>

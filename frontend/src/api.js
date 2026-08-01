@@ -247,6 +247,12 @@ export function reviewSubmission(submissionId, status, points, comment) {
   });
 }
 
+export function deleteSubmission(submissionId) {
+  return request(`/challenges/submissions/${submissionId}/`, {
+    method: 'DELETE'
+  });
+}
+
 export function getMedals(mine) {
   const query = mine ? '?mine=true' : '';
   return request(`/challenges/medals/${query}`);

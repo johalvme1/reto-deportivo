@@ -117,6 +117,25 @@ class ReviewSubmissionView(APIView):
 
         return Response(ChallengeSubmissionSerializer(submission).data)
 
+class DeleteSubmissionView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSupervisor]
+
+    def delete(self, request, submission_id):
+        try:
+            submission = ChallengeSubmission.objects.get(id=submission_id)
+        except ChallengeSubmission.DoesNotExist:
+            return Response({'error': 'Evidencia no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        if submission.status == 'approved':
+            has_other_approved = submission.challenge.submissions.filter(
+                user=submission.user, status='approved'
+            ).exclude(id=submission.id).exists()
+            if not has_other_approved:
+                Medal.objects.filter(user=submission.user, challenge=submission.challenge).delete()
+
+        submission.delete()
+        return Response({'detail': 'Evidencia eliminada'}, status=status.HTTP_200_OK)
+
 class MedalsView(APIView):
     def get(self, request):
         medals = Medal.objects.select_related('user', 'challenge')
