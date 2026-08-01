@@ -121,7 +121,7 @@ class LeaderboardView(APIView):
         extra_map = {entry['user']: entry['extra_points'] for entry in challenge_agg}
 
         leaderboard = []
-        for user in User.objects.filter(role='participant', is_superuser=False):
+        for user in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
             d = daily_map.get(user.id, {})
             total = d.get('image_count', 0) + d.get('steps_count', 0) + d.get('activity_count', 0) + extra_map.get(user.id, 0)
             leaderboard.append({

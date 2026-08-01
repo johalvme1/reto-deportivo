@@ -37,7 +37,7 @@ function ChallengeManager() {
   };
 
   const handleRejectUser = async (id) => {
-    if (!confirm('¿Rechazar a este usuario? Ya no podrá iniciar sesión.')) return;
+    if (!confirm('¿Rechazar a este usuario? Se eliminará su solicitud de acceso.')) return;
     try {
       await reviewUser(id, 'reject');
       loadPending();

@@ -73,14 +73,12 @@ class ReviewUserView(APIView):
             user.is_approved = True
             user.is_active = True
             user.save(update_fields=['is_approved', 'is_active'])
+            return Response(UserSerializer(user).data)
         elif action == 'reject':
-            user.is_approved = True
-            user.is_active = False
-            user.save(update_fields=['is_approved', 'is_active'])
+            user.delete()
+            return Response({'detail': 'Solicitud eliminada'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Acción inválida'}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(UserSerializer(user).data)
 
 class ProfileView(APIView):
     def get(self, request):
