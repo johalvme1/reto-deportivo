@@ -152,15 +152,16 @@ class EvidenceGalleryView(APIView):
         items = []
 
         subs = (
-            ChallengeSubmission.objects.exclude(status='rejected')
+            ChallengeSubmission.objects
             .exclude(user__is_superuser=True)
             .select_related('user', 'challenge')
-            .order_by('-created_at')[:60]
+            .order_by('-created_at')[:300]
         )
         for s in subs:
             items.append({
                 'id': f'c{s.id}',
                 'kind': 'challenge',
+                'user_id': s.user_id,
                 'user_name': s.user.name or s.user.username,
                 'title': s.challenge.title,
                 'status': s.status,
@@ -176,7 +177,7 @@ class EvidenceGalleryView(APIView):
             .exclude(user__is_superuser=True)
             .filter(Q(image__isnull=False) & ~Q(image='') | Q(steps_image__isnull=False) & ~Q(steps_image=''))
             .select_related('user')
-            .order_by('-date')[:60]
+            .order_by('-date')[:300]
         )
         for d in dps:
             sort_key = datetime.combine(d.date, dtime.min).timestamp()
@@ -185,6 +186,7 @@ class EvidenceGalleryView(APIView):
                 items.append({
                     'id': f'd{d.id}-img',
                     'kind': 'daily',
+                    'user_id': d.user_id,
                     'user_name': user_name,
                     'title': 'Evidencia diaria',
                     'status': 'approved',
@@ -198,6 +200,7 @@ class EvidenceGalleryView(APIView):
                 items.append({
                     'id': f'd{d.id}-steps',
                     'kind': 'daily',
+                    'user_id': d.user_id,
                     'user_name': user_name,
                     'title': 'Evidencia de pasos',
                     'status': 'approved',
@@ -209,7 +212,7 @@ class EvidenceGalleryView(APIView):
                 })
 
         items.sort(key=lambda e: e['sort_key'], reverse=True)
-        return Response(items[:60])
+        return Response(items)
 
 class ChallengeSubmissionsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
