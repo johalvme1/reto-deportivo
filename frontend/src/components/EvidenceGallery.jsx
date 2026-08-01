@@ -20,7 +20,7 @@ export default function EvidenceGallery() {
       </div>
       {error && <div className="alert alert-error">{error}</div>}
       {items.length === 0 && !error && (
-        <p style={{ color: '#b088c0' }}>Aún no hay evidencias aprobadas para mostrar</p>
+        <p style={{ color: '#b088c0' }}>Aún no hay evidencias para mostrar</p>
       )}
       <div className="evidence-grid">
         {items.map(s => (
@@ -29,7 +29,8 @@ export default function EvidenceGallery() {
             {s.video && <video src={s.video} controls preload="metadata" className="evidence-media" />}
             <div className="evidence-meta">
               <strong>{s.user_name}</strong>
-              <span className="badge badge-supervisor" style={{ marginLeft: 6 }}>{s.title} +{s.points} pts</span>
+              <span className="badge badge-supervisor" style={{ marginLeft: 6 }}>{s.title}{s.status === 'approved' ? ` +${s.points} pts` : ''}</span>
+              {s.status === 'pending' && <span className="badge badge-participant" style={{ marginLeft: 6 }}>Pendiente</span>}
             </div>
             <div style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>
               {s.date}

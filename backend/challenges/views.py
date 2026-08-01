@@ -133,7 +133,7 @@ class EvidenceGalleryView(APIView):
         items = []
 
         subs = (
-            ChallengeSubmission.objects.filter(status='approved')
+            ChallengeSubmission.objects.exclude(status='rejected')
             .exclude(user__is_superuser=True)
             .select_related('user', 'challenge')
             .order_by('-created_at')[:60]
@@ -144,7 +144,8 @@ class EvidenceGalleryView(APIView):
                 'kind': 'challenge',
                 'user_name': s.user.name or s.user.username,
                 'title': s.challenge.title,
-                'points': s.challenge.points,
+                'status': s.status,
+                'points': (s.points_awarded or s.challenge.points) if s.status == 'approved' else 0,
                 'image': s.image.url if s.image else None,
                 'video': s.video.url if s.video else None,
                 'date': s.created_at.strftime('%Y-%m-%d'),
@@ -167,6 +168,7 @@ class EvidenceGalleryView(APIView):
                     'kind': 'daily',
                     'user_name': user_name,
                     'title': 'Evidencia diaria',
+                    'status': 'approved',
                     'points': 1,
                     'image': d.image.url,
                     'video': None,
@@ -179,6 +181,7 @@ class EvidenceGalleryView(APIView):
                     'kind': 'daily',
                     'user_name': user_name,
                     'title': 'Evidencia de pasos',
+                    'status': 'approved',
                     'points': 1,
                     'image': d.steps_image.url,
                     'video': None,
