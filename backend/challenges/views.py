@@ -175,7 +175,7 @@ class EvidenceGalleryView(APIView):
         dps = (
             DailyPoint.objects
             .exclude(user__is_superuser=True)
-            .filter(Q(image__isnull=False) & ~Q(image='') | Q(steps_image__isnull=False) & ~Q(steps_image=''))
+            .filter(Q(image__isnull=False) & ~Q(image='') | Q(video__isnull=False) & ~Q(video='') | Q(steps_image__isnull=False) & ~Q(steps_image=''))
             .select_related('user')
             .order_by('-date')[:300]
         )
@@ -193,6 +193,20 @@ class EvidenceGalleryView(APIView):
                     'points': 1,
                     'image': d.image.url,
                     'video': None,
+                    'date': d.date.isoformat(),
+                    'sort_key': sort_key,
+                })
+            if d.video:
+                items.append({
+                    'id': f'd{d.id}-vid',
+                    'kind': 'daily',
+                    'user_id': d.user_id,
+                    'user_name': user_name,
+                    'title': 'Evidencia diaria',
+                    'status': 'approved',
+                    'points': 1,
+                    'image': None,
+                    'video': d.video.url,
                     'date': d.date.isoformat(),
                     'sort_key': sort_key,
                 })

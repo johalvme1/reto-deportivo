@@ -33,17 +33,21 @@ class ImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        file = request.FILES.get('image')
-        if not file:
-            return Response({'error': 'Imagen requerida'}, status=status.HTTP_400_BAD_REQUEST)
+        image = request.FILES.get('image')
+        video = request.FILES.get('video')
+        if not image and not video:
+            return Response({'error': 'Debes subir una foto o un video como evidencia'}, status=status.HTTP_400_BAD_REQUEST)
 
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
-        if dp.image:
+        if dp.image or dp.video:
             return Response({'error': 'La evidencia de hoy ya fue registrada y está bloqueada'}, status=status.HTTP_400_BAD_REQUEST)
 
-        dp.image = file
+        if image:
+            dp.image = image
+        else:
+            dp.video = video
         dp.save()
         return Response(DailyPointSerializer(dp).data)
 
@@ -109,7 +113,7 @@ class LeaderboardView(APIView):
         User = get_user_model()
 
         daily_agg = DailyPoint.objects.values('user').annotate(
-            image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='')),
+            image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='') | Q(video__isnull=False) & ~Q(video='')),
             steps_count=Count('pk', filter=Q(steps__isnull=False) & Q(steps_image__isnull=False)),
             activity_count=Count('pk', filter=Q(activity__isnull=False)),
         )

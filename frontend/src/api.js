@@ -139,9 +139,9 @@ export function getLeaderboard() {
   return request('/points/leaderboard/');
 }
 
-export function uploadImage(file) {
+export function uploadDailyEvidence(file, kind) {
   const formData = new FormData();
-  formData.append('image', file);
+  formData.append(kind, file);
   return fetch(`${API}/points/image/`, {
     method: 'POST',
     headers: authHeaders(),

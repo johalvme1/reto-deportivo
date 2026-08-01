@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadImage, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals, getUnreadCount } from '../api';
+import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals, getUnreadCount } from '../api';
 
 function fmtCountdown(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -28,6 +28,7 @@ export default function Dashboard() {
   const [evidenceFor, setEvidenceFor] = useState(null);
   const [evidenceKind, setEvidenceKind] = useState('image');
   const [evidenceSlot, setEvidenceSlot] = useState(1);
+  const [dailyKind, setDailyKind] = useState('image');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [now, setNow] = useState(Date.now());
@@ -73,8 +74,8 @@ export default function Dashboard() {
     if (!file) return;
     setError(''); setSuccess('');
     try {
-      await uploadImage(file);
-      setSuccess('Imagen subida! +1 punto');
+      await uploadDailyEvidence(file, dailyKind);
+      setSuccess('Evidencia subida! +1 punto');
       fileRef.current.value = '';
       loadData();
     } catch (err) { setError(err.message); }
@@ -163,7 +164,7 @@ export default function Dashboard() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      {dp?.image && dp?.steps && dp?.steps_image && dp?.activity && (
+      {(dp?.image || dp?.video) && dp?.steps && dp?.steps_image && dp?.activity && (
         <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong>Día completado</strong>
           <span>🔒 Registros de hoy bloqueados</span>
@@ -205,16 +206,20 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className={`point-card ${dp?.image ? 'done' : ''}`}>
-          {dp?.image && <span className="lock-badge">🔒 Bloqueado</span>}
+        <div className={`point-card ${dp?.image || dp?.video ? 'done' : ''}`}>
+          {(dp?.image || dp?.video) && <span className="lock-badge">🔒 Bloqueado</span>}
           <div className="point-icon">📷</div>
-          <h3>Subir imagen</h3>
+          <h3>Subir evidencia</h3>
           <div className="point-value">1 punto</div>
-          {dp?.image ? (
+          {dp?.image || dp?.video ? (
             <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>Completado 🔒</span>
           ) : (
             <div style={{ marginTop: 8 }}>
-              <input type="file" ref={fileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6 }} />
+              <select value={dailyKind} onChange={e => setDailyKind(e.target.value)}>
+                <option value="image">Foto</option>
+                <option value="video">Video</option>
+              </select>
+              <input type="file" ref={fileRef} accept={dailyKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
               <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleImageUpload}>Subir</button>
             </div>
           )}
