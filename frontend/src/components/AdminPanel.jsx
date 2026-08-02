@@ -254,8 +254,8 @@ function ChallengeManager() {
                 {g.items.map(s => (
                   <div key={s.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10, alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {s.image && <img src={s.image} alt="evidencia" style={{ height: 20, borderRadius: 6, cursor: 'zoom-in' }} onClick={() => setPreview({ src: s.image, kind: 'image' })} />}
-                      {s.video && <video src={s.video} muted style={{ height: 20, borderRadius: 6, cursor: 'pointer', background: '#000' }} onClick={() => setPreview({ src: s.video, kind: 'video' })} />}
+                      {s.image && <img src={s.image} alt="evidencia" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, cursor: 'zoom-in' }} onClick={() => setPreview({ src: s.image, kind: 'image' })} />}
+                      {s.video && <video src={s.video} muted style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, cursor: 'pointer', background: '#000' }} onClick={() => setPreview({ src: s.video, kind: 'video' })} />}
                     </div>
                     <div style={{ flex: 1, minWidth: 220 }}>
                       <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`}>
