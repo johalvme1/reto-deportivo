@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getSupervisorDashboard } from '../api';const tableStyle = {
+import { getSupervisorDashboard } from '../api';
+
+const tableStyle = {
   width: '100%',
   borderCollapse: 'collapse',
   fontSize: '0.85rem',
@@ -17,44 +19,69 @@ const tdStyle = {
 };
 const numStyle = { textAlign: 'right' };
 
-function StepsChart({ series }) {
-  const max = Math.max(...series.map(p => p.steps), 1);
-  const total = series.reduce((acc, p) => acc + p.steps, 0);
-  const best = series.reduce((a, b) => (b.steps > a.steps ? b : a), series[0]);
+const LINE_COLORS = ['#c78be3', '#f78ec6', '#06d6a0', '#f7b24a', '#ef476f', '#118ab2', '#06aed5', '#a8a1f0', '#73d2de', '#f4a261'];
+
+function StepsLinesChart({ participants }) {
+  const days = participants[0]?.steps_series || [];
+  const n = days.length;
+  const maxSteps = Math.max(...participants.flatMap(p => (p.steps_series || []).map(d => d.steps || 0)), 1);
+  const maxY = Math.ceil(maxSteps / 1000) * 1000 || 1000;
+
+  const W = 900;
+  const H = 300;
+  const PAD = { top: 16, right: 16, bottom: 28, left: 52 };
+  const iw = W - PAD.left - PAD.right;
+  const ih = H - PAD.top - PAD.bottom;
+
+  const x = i => PAD.left + (n <= 1 ? iw / 2 : (i / (n - 1)) * iw);
+  const y = v => PAD.top + ih - (v / maxY) * ih;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(t => Math.round(maxY * t));
+  const xTickStep = Math.max(1, Math.ceil(n / 6));
+
   return (
     <div>
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 10, fontSize: '0.8rem', color: '#8a5f96' }}>
-        <span><strong style={{ color: '#6b4a70' }}>{total.toLocaleString('es')}</strong> pasos en 30 días</span>
-        {best.steps > 0 && (
-          <span>Récord: <strong style={{ color: '#6b4a70' }}>{best.steps.toLocaleString('es')}</strong> ({best.date})</span>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }}>
+        {yTicks.map(t => (
+          <g key={t}>
+            <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="#f1e0f5" strokeDasharray="3 3" />
+            <text x={PAD.left - 6} y={y(t) + 4} textAnchor="end" fontSize="10" fill="#b088c0">
+              {t.toLocaleString('es')}
+            </text>
+          </g>
+        ))}
+        {days.map((d, i) =>
+          i % xTickStep === 0 ? (
+            <text key={d.date} x={x(i)} y={H - 8} textAnchor="middle" fontSize="9" fill="#b088c0">
+              {d.date.slice(5)}
+            </text>
+          ) : null
         )}
-      </div>
-      <div style={{ overflowX: 'auto' }}>
-        <div style={{ display: 'flex', gap: 2, minWidth: series.length * 18 }}>
-          {series.map(p => (
-            <div key={p.date} style={{ flex: 1, height: 150, position: 'relative' }} title={`${p.date}: ${p.steps.toLocaleString('es')} pasos`}>
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: '12%',
-                  right: '12%',
-                  height: `${(p.steps / max) * 100}%`,
-                  minHeight: p.steps ? 2 : 1,
-                  background: p.steps ? 'linear-gradient(180deg, #f7b24a, #f78ec6)' : '#f1e6f4',
-                  borderRadius: '4px 4px 0 0',
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 2, minWidth: series.length * 18, marginTop: 4 }}>
-          {series.map((p, i) => (
-            <div key={p.date} style={{ flex: 1, fontSize: '0.6rem', color: '#b088c0', textAlign: 'center', whiteSpace: 'nowrap' }}>
-              {i % 5 === 0 ? p.date.slice(5) : ''}
-            </div>
-          ))}
-        </div>
+        {participants.map((p, pi) => {
+          const color = LINE_COLORS[pi % LINE_COLORS.length];
+          const pts = (p.steps_series || []).map((d, i) => `${x(i)},${y(d.steps || 0)}`).join(' ');
+          return (
+            <g key={p.id}>
+              <polyline points={pts} fill="none" stroke={color} strokeWidth={2.2} strokeLinejoin="round" strokeLinecap="round" />
+              {(p.steps_series || []).map((d, i) => (
+                <circle key={d.date} cx={x(i)} cy={y(d.steps || 0)} r={2.4} fill={color}>
+                  <title>{`${p.name} · ${d.date}: ${d.steps.toLocaleString('es')} pasos`}</title>
+                </circle>
+              ))}
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 10 }}>
+        {participants.map((p, pi) => {
+          const total = (p.steps_series || []).reduce((acc, d) => acc + (d.steps || 0), 0);
+          return (
+            <span key={p.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#6b4a70' }}>
+              <span style={{ width: 18, height: 3.5, background: LINE_COLORS[pi % LINE_COLORS.length], borderRadius: 2, display: 'inline-block' }} />
+              {p.name} <strong>{total.toLocaleString('es')}</strong>
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -63,7 +90,6 @@ function StepsChart({ series }) {
 export default function SupervisorDashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
-  const [stepsFor, setStepsFor] = useState('all');
 
   useEffect(() => {
     getSupervisorDashboard().then(setData).catch(e => setError(e.message));
@@ -81,14 +107,6 @@ export default function SupervisorDashboard() {
     }),
     { challenges: 0, challenge_pts: 0, daily_pts: 0, total: 0 }
   );
-
-  const stepOptions = [{ id: 'all', name: 'Todos' }, ...data.participants.map(p => ({ id: String(p.id), name: p.name }))];
-  const stepsSeries = stepsFor === 'all'
-    ? (data.participants[0]?.steps_series || []).map((point, idx) => ({
-        date: point.date,
-        steps: data.participants.reduce((acc, p) => acc + ((p.steps_series[idx] && p.steps_series[idx].steps) || 0), 0),
-      }))
-    : (data.participants.find(p => String(p.id) === stepsFor)?.steps_series || []);
 
   return (
     <div>
@@ -171,16 +189,11 @@ export default function SupervisorDashboard() {
         </table>
       </div>
 
-      <h3>👟 Pasos por día</h3>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-        <label style={{ fontSize: '0.82rem', color: '#8a5f96' }}>Participante:</label>
-        <select value={stepsFor} onChange={e => setStepsFor(e.target.value)} style={{ width: 'auto', padding: '6px 10px' }}>
-          {stepOptions.map(o => (
-            <option key={o.id} value={o.id}>{o.name}</option>
-          ))}
-        </select>
-      </div>
-      <StepsChart series={stepsSeries} />
+      <h3>👟 Total de pasos diarios por participante</h3>
+      <p style={{ color: '#b088c0', fontSize: '0.8rem', marginBottom: 8 }}>
+        Últimos 30 días. Pasa el cursor sobre los puntos para ver el detalle.
+      </p>
+      <StepsLinesChart participants={data.participants} />
     </div>
   );
 }
