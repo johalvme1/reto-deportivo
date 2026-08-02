@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getEvidence } from '../api';
+import Lightbox from './Lightbox';
 
 const STATUS_LABEL = {
   approved: ['badge-supervisor', 'Aprobado'],
@@ -13,12 +14,25 @@ function formatDay(dateStr) {
   return d.toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-function EvidenceCard({ s }) {
+function EvidenceCard({ s, onOpen }) {
   const [labelClass, label] = STATUS_LABEL[s.status] || ['', ''];
   return (
     <div className="evidence-item">
-      {s.image && <img src={s.image} alt="evidencia" className="evidence-media" />}
-      {s.video && <video src={s.video} controls preload="metadata" className="evidence-media" />}
+      {s.image && (
+        <img
+          src={s.image}
+          alt="evidencia"
+          className="evidence-media evidence-thumb"
+          onClick={() => onOpen({ src: s.image, kind: 'image' })}
+        />
+      )}
+      {s.video && (
+        <video
+          src={s.video}
+          className="evidence-media evidence-thumb"
+          onClick={() => onOpen({ src: s.video, kind: 'video' })}
+        />
+      )}
       <div className="evidence-meta">
         <span className="badge" style={{ background: '#f0e3f2', color: '#7a5a86' }}>{s.title}</span>
         {label && <span className={`badge ${labelClass}`} style={{ marginLeft: 6 }}>{label}</span>}
@@ -33,6 +47,7 @@ function EvidenceCard({ s }) {
 export default function EvidenceGallery() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
+  const [preview, setPreview] = useState(null);
 
   useEffect(() => {
     getEvidence()
@@ -70,12 +85,13 @@ export default function EvidenceGallery() {
             <div key={u.user_id} style={{ marginTop: 14, padding: '12px 14px', background: '#faf3fc', border: '1px solid #f1e0f5', borderRadius: 12 }}>
               <strong style={{ color: '#d9629f' }}>{u.user_name}</strong>
               <div className="evidence-grid" style={{ marginTop: 10 }}>
-                {u.evidences.map(s => <EvidenceCard key={s.id} s={s} />)}
+                {u.evidences.map(s => <EvidenceCard key={s.id} s={s} onOpen={setPreview} />)}
               </div>
             </div>
           ))}
         </div>
       ))}
+      {preview && <Lightbox src={preview.src} kind={preview.kind} onClose={() => setPreview(null)} />}
     </div>
   );
 }

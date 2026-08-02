@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
 import SupervisorDashboard from './SupervisorDashboard';
+import Lightbox from './Lightbox';
 
 function ChallengeManager() {
   const [challenges, setChallenges] = useState([]);
@@ -19,6 +20,7 @@ function ChallengeManager() {
   const [pendingCompletions, setPendingCompletions] = useState([]);
   const [reviews, setReviews] = useState({});
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [preview, setPreview] = useState(null);
 
   const buildDateTime = (d, t) => d ? `${d}T${t || '00:00'}` : null;
 
@@ -252,8 +254,8 @@ function ChallengeManager() {
                 {g.items.map(s => (
                   <div key={s.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10, alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {s.image && <a href={s.image} target="_blank" rel="noreferrer"><img src={s.image} alt="evidencia" style={{ height: 80, borderRadius: 6 }} /></a>}
-                      {s.video && <a href={s.video} target="_blank" rel="noreferrer"><video src={s.video} controls style={{ height: 80, borderRadius: 6 }} /></a>}
+                      {s.image && <img src={s.image} alt="evidencia" style={{ height: 80, borderRadius: 6, cursor: 'zoom-in' }} onClick={() => setPreview({ src: s.image, kind: 'image' })} />}
+                      {s.video && <video src={s.video} muted style={{ height: 80, borderRadius: 6, cursor: 'pointer', background: '#000' }} onClick={() => setPreview({ src: s.video, kind: 'video' })} />}
                     </div>
                     <div style={{ flex: 1, minWidth: 220 }}>
                       <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`}>
@@ -310,6 +312,7 @@ function ChallengeManager() {
           </div>
         ))}
       </div>
+      {preview && <Lightbox src={preview.src} kind={preview.kind} onClose={() => setPreview(null)} />}
     </div>
   );
 }
