@@ -141,7 +141,7 @@ export default function Dashboard() {
     setError(''); setSuccess('');
     try {
       await completeChallenge(id, msg.trim());
-      setSuccess('¡Reto marcado como completado! El supervisor recibirá tu solicitud.');
+      setSuccess('Solicitud enviada. El supervisor revisará tus evidencias y te otorgará los puntos cuando apruebe el reto.');
       loadData();
     } catch (err) { setError(err.message); }
   };
@@ -371,6 +371,11 @@ export default function Dashboard() {
                         >
                           {completionRequested ? '⏳ En revisión' : 'Completé mi reto'}
                         </button>
+                      )}
+                      {completionRequested && (
+                        <span style={{ fontSize: '0.72rem', color: '#8a6d1a' }}>
+                          El supervisor revisará tus evidencias antes de otorgarte los puntos.
+                        </span>
                       )}
                     </div>
                   )}
