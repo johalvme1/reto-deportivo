@@ -83,11 +83,12 @@ export default function Dashboard() {
 
   const handleSteps = async () => {
     const file = stepsFileRef.current?.files?.[0];
-    if (!steps || Number(steps) < 5000 || !file) return;
+    if (steps === '' || Number(steps) < 0 || !file) return;
     setError(''); setSuccess('');
     try {
-      await submitSteps(Number(steps), file);
-      setSuccess(`Pasos registrados (${steps}) con foto! +1 punto`);
+      const res = await submitSteps(Number(steps), file);
+      const pts = res?.points ?? 0;
+      setSuccess(`Pasos registrados (${Number(steps).toLocaleString('es')}) con foto! +${pts} punto${pts === 1 ? '' : 's'}`);
       setSteps('');
       stepsFileRef.current.value = '';
       loadData();
@@ -229,7 +230,7 @@ export default function Dashboard() {
           {dp?.steps && dp?.steps_image && <span className="lock-badge">🔒 Bloqueado</span>}
           <div className="point-icon">👟</div>
           <h3>Registrar pasos</h3>
-          <div className="point-value">1 punto</div>
+          <div className="point-value">0.5 a 1 punto</div>
           {dp?.steps && dp?.steps_image ? (
             <span style={{ color: '#d9629f', fontWeight: 600, fontSize: '0.85rem' }}>
               Hecho: {dp.steps.toLocaleString('es')} pasos + foto 🔒
@@ -238,15 +239,18 @@ export default function Dashboard() {
             <div style={{ marginTop: 8 }}>
               <input
                 type="number"
-                min="5000"
+                min="0"
                 value={steps}
                 onChange={e => setSteps(e.target.value)}
-                placeholder="Mínimo 5,000 pasos"
+                placeholder="Pasos de hoy"
                 style={{ textAlign: 'center' }}
               />
               <input type="file" ref={stepsFileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
               <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Adjunta una foto como evidencia</p>
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={!steps || Number(steps) < 5000}>Registrar</button>
+              <p style={{ fontSize: '0.68rem', color: '#c9a8d4', marginTop: 2 }}>
+                0–2,999 → 0 pts · 3,000–5,000 → 0.5 pts · +5,000 → 1 pt
+              </p>
+              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={steps === '' || Number(steps) < 0}>Registrar</button>
             </div>
           )}
         </div>

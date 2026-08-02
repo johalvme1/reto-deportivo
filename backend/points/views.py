@@ -65,13 +65,13 @@ class StepsSubmitView(APIView):
         except (TypeError, ValueError):
             return Response({'error': 'Cantidad de pasos inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if steps < 5000:
-            return Response({'error': 'Debes registrar al menos 5,000 pasos para ganar el punto'}, status=status.HTTP_400_BAD_REQUEST)
+        if steps < 0:
+            return Response({'error': 'La cantidad de pasos no puede ser negativa'}, status=status.HTTP_400_BAD_REQUEST)
 
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
-        if dp.steps and dp.steps_image:
+        if dp.steps is not None and dp.steps_image:
             return Response({'error': 'Los pasos de hoy ya fueron registrados y están bloqueados'}, status=status.HTTP_400_BAD_REQUEST)
 
         dp.steps = steps
@@ -109,12 +109,20 @@ class LeaderboardView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        from django.db.models import Count, Q, Sum, F
+        from django.db.models import Count, Q, Sum, Case, When, Value, DecimalField
         User = get_user_model()
 
         daily_agg = DailyPoint.objects.values('user').annotate(
             image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='') | Q(video__isnull=False) & ~Q(video='')),
-            steps_count=Count('pk', filter=Q(steps__isnull=False) & Q(steps_image__isnull=False)),
+            steps_points=Sum(
+                Case(
+                    When(steps__gt=5000, then=Value(1)),
+                    When(steps__gte=3000, then=Value(0.5)),
+                    default=Value(0),
+                    output_field=DecimalField(max_digits=10, decimal_places=2),
+                ),
+                filter=Q(steps__isnull=False) & Q(steps_image__isnull=False),
+            ),
             activity_count=Count('pk', filter=Q(activity__isnull=False)),
         )
         daily_map = {entry['user']: entry for entry in daily_agg}
@@ -127,7 +135,7 @@ class LeaderboardView(APIView):
         leaderboard = []
         for user in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
             d = daily_map.get(user.id, {})
-            total = d.get('image_count', 0) + d.get('steps_count', 0) + d.get('activity_count', 0) + extra_map.get(user.id, 0)
+            total = float(d.get('image_count', 0) or 0) + float(d.get('steps_points', 0) or 0) + float(d.get('activity_count', 0) or 0) + float(extra_map.get(user.id, 0) or 0)
             leaderboard.append({
                 'id': user.id,
                 'name': user.name or user.username,
