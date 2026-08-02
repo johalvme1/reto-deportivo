@@ -116,6 +116,12 @@ function ChallengeManager() {
     } catch (err) { alert(err.message); }
   };
 
+  const groups = {};
+  submissions.forEach(s => {
+    if (!groups[s.user]) groups[s.user] = { name: s.user_name, items: [] };
+    groups[s.user].items.push(s);
+  });
+
   return (
     <div>
       <h2>Gestionar Retos</h2>
@@ -180,45 +186,58 @@ function ChallengeManager() {
         <div style={{ marginTop: 16 }}>
           <h3>Evidencias del reto</h3>
           {submissions.length === 0 && <p style={{ color: '#b088c0' }}>Sin evidencias</p>}
-          {submissions.map(s => (
-            <div key={s.id} className="challenge-item">
-              <div style={{ flex: 1 }}>
-                <strong>{s.user_name}</strong>
-                <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`} style={{ marginLeft: 8 }}>
-                  {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
-                </span>
-                {s.status === 'approved' && <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Aprobado</span>}
-                <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {s.image && <a href={s.image} target="_blank" rel="noreferrer"><img src={s.image} alt="evidencia" style={{ height: 80, borderRadius: 6 }} /></a>}
-                  {s.video && <a href={s.video} target="_blank" rel="noreferrer"><video src={s.video} controls style={{ height: 80, borderRadius: 6 }} /></a>}
+          {Object.entries(groups).map(([uid, g]) => {
+            const userApproved = g.items.some(x => x.status === 'approved');
+            const hasPending = g.items.some(x => x.status === 'pending');
+            return (
+              <div key={uid} style={{ border: '1px solid #f1e0f5', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <strong>{g.name}</strong>
+                  {userApproved
+                    ? <span className="badge badge-supervisor">🏅 Reto completado</span>
+                    : hasPending
+                      ? <span className="badge" style={{ background: '#fff3cd', color: '#8a6d1a' }}>Pendiente de revisión</span>
+                      : <span className="badge badge-participant">Sin aprobar</span>}
+                  <span style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>{g.items.length} evidencia(s)</span>
                 </div>
-                {s.review_comment && (
-                  <div style={{ marginTop: 6, fontSize: '0.82rem', color: '#b088c0' }}>💬 {s.review_comment}</div>
-                )}
-              </div>
-              {s.status === 'pending' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 280 }}>
-                  <input
-                    type="text"
-                    placeholder="Comentario (ej: lo hiciste muy bien...)"
-                    value={reviews[s.id]?.comment ?? ''}
-                    onChange={e => setReview(s.id, 'comment', e.target.value)}
-                    style={{ width: '100%' }}
-                  />
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="btn btn-success btn-sm" onClick={() => handleReview(s.id, 'approved')}>Aprobar (+{s.challenge_points} pts)</button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
-                    <button className="btn btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
+                {g.items.map(s => (
+                  <div key={s.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10, alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {s.image && <a href={s.image} target="_blank" rel="noreferrer"><img src={s.image} alt="evidencia" style={{ height: 80, borderRadius: 6 }} /></a>}
+                      {s.video && <a href={s.video} target="_blank" rel="noreferrer"><video src={s.video} controls style={{ height: 80, borderRadius: 6 }} /></a>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 220 }}>
+                      <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`}>
+                        {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
+                      </span>
+                      {s.status === 'approved' && <span className="badge" style={{ marginLeft: 6, background: '#e6ffe9', color: '#0d5c43' }}>+{s.challenge_points} pts</span>}
+                      {s.review_comment && <div style={{ marginTop: 4, fontSize: '0.82rem', color: '#b088c0' }}>💬 {s.review_comment}</div>}
+                      {s.status === 'pending' && (
+                        <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            placeholder="Comentario..."
+                            value={reviews[s.id]?.comment ?? ''}
+                            onChange={e => setReview(s.id, 'comment', e.target.value)}
+                            style={{ width: 180 }}
+                          />
+                          {!userApproved && <button className="btn btn-success btn-sm" onClick={() => handleReview(s.id, 'approved')}>Aprobar (+{s.challenge_points} pts)</button>}
+                          {userApproved && <span style={{ fontSize: '0.75rem', color: '#b088c0' }}>Ya completó el reto: solo rechazar o eliminar</span>}
+                          <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
+                          <button className="btn btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
+                        </div>
+                      )}
+                      {s.status !== 'pending' && (
+                        <div style={{ marginTop: 6 }}>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-              {s.status !== 'pending' && (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
-                </div>
-              )}
-            </div>
-          ))}
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
 
