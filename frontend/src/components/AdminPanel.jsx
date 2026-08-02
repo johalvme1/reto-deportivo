@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser } from '../api';
+import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser, approveUserSubmissions } from '../api';
 
 function ChallengeManager() {
   const [challenges, setChallenges] = useState([]);
@@ -116,6 +116,17 @@ function ChallengeManager() {
     } catch (err) { alert(err.message); }
   };
 
+  const handleApproveUser = async (userId) => {
+    const g = groups[userId];
+    if (!g) return;
+    if (!confirm(`¿Aprobar a ${g.name}? Se otorgarán ${g.items[0].challenge_points} pts y sus demás evidencias quedarán rechazadas.`)) return;
+    try {
+      await approveUserSubmissions(selected, userId);
+      loadSubmissions(selected);
+      load();
+    } catch (err) { alert(err.message); }
+  };
+
   const groups = {};
   submissions.forEach(s => {
     if (!groups[s.user]) groups[s.user] = { name: s.user_name, items: [] };
@@ -199,6 +210,9 @@ function ChallengeManager() {
                       ? <span className="badge" style={{ background: '#fff3cd', color: '#8a6d1a' }}>Pendiente de revisión</span>
                       : <span className="badge badge-participant">Sin aprobar</span>}
                   <span style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>{g.items.length} evidencia(s)</span>
+                  {!userApproved && hasPending && (
+                    <button className="btn btn-success btn-sm" onClick={() => handleApproveUser(uid)}>Aprobar puntos (+{g.items[0].challenge_points} pts)</button>
+                  )}
                 </div>
                 {g.items.map(s => (
                   <div key={s.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10, alignItems: 'flex-start' }}>
@@ -216,13 +230,11 @@ function ChallengeManager() {
                         <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                           <input
                             type="text"
-                            placeholder="Comentario..."
+                            placeholder="Comentario (ej: lo hiciste muy bien...)"
                             value={reviews[s.id]?.comment ?? ''}
                             onChange={e => setReview(s.id, 'comment', e.target.value)}
                             style={{ width: 180 }}
                           />
-                          {!userApproved && <button className="btn btn-success btn-sm" onClick={() => handleReview(s.id, 'approved')}>Aprobar (+{s.challenge_points} pts)</button>}
-                          {userApproved && <span style={{ fontSize: '0.75rem', color: '#b088c0' }}>Ya completó el reto: solo rechazar o eliminar</span>}
                           <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
                           <button className="btn btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
                         </div>

@@ -253,6 +253,13 @@ export function deleteSubmission(submissionId) {
   });
 }
 
+export function approveUserSubmissions(challengeId, userId) {
+  return request(`/challenges/${challengeId}/approve-user/`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId })
+  });
+}
+
 export function getMedals(mine) {
   const query = mine ? '?mine=true' : '';
   return request(`/challenges/medals/${query}`);

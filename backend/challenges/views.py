@@ -4,9 +4,12 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import Q
+from django.contrib.auth import get_user_model
 from .models import Challenge, ChallengeSubmission, Medal
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
 from points.models import DailyPoint
+
+User = get_user_model()
 
 class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -119,6 +122,40 @@ class ReviewSubmissionView(APIView):
         submission.save()
 
         return Response(ChallengeSubmissionSerializer(submission).data)
+
+class ApproveUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSupervisor]
+
+    def post(self, request, challenge_id):
+        user_id = request.data.get('user_id')
+        try:
+            challenge = Challenge.objects.get(id=challenge_id)
+            target = User.objects.get(id=user_id)
+        except (Challenge.DoesNotExist, User.DoesNotExist):
+            return Response({'error': 'No encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        if challenge.submissions.filter(user=target, status='approved').exists():
+            return Response({'error': 'Este participante ya completó el reto'}, status=status.HTTP_400_BAD_REQUEST)
+
+        pending = challenge.submissions.filter(user=target, status='pending').order_by('created_at')
+        if not pending.exists():
+            return Response({'error': 'No hay evidencias pendientes de este participante'}, status=status.HTTP_400_BAD_REQUEST)
+
+        first = pending.first()
+        first.status = 'approved'
+        first.points_awarded = challenge.points
+        first.reviewed_at = timezone.now()
+        first.save()
+        Medal.objects.get_or_create(user=target, challenge=challenge)
+
+        for s in pending.exclude(id=first.id):
+            s.status = 'rejected'
+            s.points_awarded = 0
+            s.review_comment = 'Reto completado con otra evidencia'
+            s.reviewed_at = timezone.now()
+            s.save()
+
+        return Response({'ok': True, 'awarded': challenge.points})
 
 class DeleteSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSupervisor]
