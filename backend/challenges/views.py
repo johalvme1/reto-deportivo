@@ -258,11 +258,21 @@ class SupervisorDashboardView(APIView):
             })
 
         participants = []
+        start_day = today - timedelta(days=29)
         for u in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
             medals = Medal.objects.filter(user=u)
             daily = DailyPoint.objects.filter(user=u)
             challenge_points = sum(m.challenge.points for m in medals)
             daily_points = sum(dp.points for dp in daily)
+
+            steps_qs = DailyPoint.objects.filter(user=u, date__gte=start_day, steps__isnull=False)
+            steps_by_day = {dp.date.isoformat(): dp.steps for dp in steps_qs}
+            steps_series = []
+            cursor = start_day
+            for _ in range(30):
+                steps_series.append({'date': cursor.isoformat(), 'steps': steps_by_day.get(cursor.isoformat(), 0)})
+                cursor += timedelta(days=1)
+
             participants.append({
                 'id': u.id,
                 'name': u.name or u.username,
@@ -272,6 +282,8 @@ class SupervisorDashboardView(APIView):
                 'challenge_points': challenge_points,
                 'daily_points': daily_points,
                 'total_points': challenge_points + daily_points,
+                'steps_total': sum(dp.steps for dp in steps_qs),
+                'steps_series': steps_series,
             })
         participants.sort(key=lambda p: p['total_points'], reverse=True)
 
