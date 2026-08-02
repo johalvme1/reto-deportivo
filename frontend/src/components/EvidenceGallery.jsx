@@ -20,7 +20,7 @@ function EvidenceCard({ s }) {
       {s.image && <img src={s.image} alt="evidencia" className="evidence-media" />}
       {s.video && <video src={s.video} controls preload="metadata" className="evidence-media" />}
       <div className="evidence-meta">
-        <span className="badge" style={{ background: '#f0e3f2', color: '#7a5a86' }}>{s.title}{s.status === 'approved' && s.points ? ` +${s.points} pts` : ''}</span>
+        <span className="badge" style={{ background: '#f0e3f2', color: '#7a5a86' }}>{s.title}</span>
         {label && <span className={`badge ${labelClass}`} style={{ marginLeft: 6 }}>{label}</span>}
       </div>
       <div style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>

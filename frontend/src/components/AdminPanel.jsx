@@ -187,7 +187,7 @@ function ChallengeManager() {
                 <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`} style={{ marginLeft: 8 }}>
                   {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
                 </span>
-                {s.status === 'approved' && <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{s.points_awarded} pts</span>}
+                {s.status === 'approved' && <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Aprobado</span>}
                 <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {s.image && <a href={s.image} target="_blank" rel="noreferrer"><img src={s.image} alt="evidencia" style={{ height: 80, borderRadius: 6 }} /></a>}
                   {s.video && <a href={s.video} target="_blank" rel="noreferrer"><video src={s.video} controls style={{ height: 80, borderRadius: 6 }} /></a>}
