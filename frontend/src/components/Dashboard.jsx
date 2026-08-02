@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals, getUnreadCount } from '../api';
+import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals, getUnreadCount, completeChallenge } from '../api';
 
 function fmtCountdown(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -131,6 +131,17 @@ export default function Dashboard() {
       setEvidenceKind('image');
       setEvidenceSlot(1);
       evidenceFileRef.current.value = '';
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleCompleteChallenge = async (id) => {
+    const msg = prompt('Mensaje para el supervisor (opcional):', '');
+    if (msg === null) return;
+    setError(''); setSuccess('');
+    try {
+      await completeChallenge(id, msg.trim());
+      setSuccess('¡Reto marcado como completado! El supervisor recibirá tu solicitud.');
       loadData();
     } catch (err) { setError(err.message); }
   };
@@ -275,6 +286,8 @@ export default function Dashboard() {
                 else counter = { label: 'Quedan', target: end };
               }
               const canSubmit = c.is_active && inWindow && (!us || us.active_count < us.max);
+              const activeCount = us?.active_count ?? 0;
+              const completionRequested = !!us?.completion_requested;
               return (
                 <div key={c.id} className="challenge-item">
                   <div style={{ flex: 1 }}>
@@ -328,26 +341,38 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ) : (
-                    canSubmit && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {[1, 2, 3].map(n => {
-                            const used = (us?.active_count ?? 0) >= n;
-                            return (
-                              <button
-                                key={n}
-                                className="btn btn-primary btn-sm"
-                                disabled={used}
-                                onClick={() => { setEvidenceFor(c.id); setEvidenceSlot(n); setEvidenceKind('image'); }}
-                              >
-                                Enviar evidencia {n}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <span style={{ fontSize: '0.72rem', color: '#b088c0' }}>Puedes enviar hasta 3 evidencias por reto.</span>
-                      </div>
-                    )
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                      {canSubmit && (
+                        <>
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {[1, 2, 3].map(n => {
+                              const used = (us?.active_count ?? 0) >= n;
+                              return (
+                                <button
+                                  key={n}
+                                  className="btn btn-primary btn-sm"
+                                  disabled={used}
+                                  onClick={() => { setEvidenceFor(c.id); setEvidenceSlot(n); setEvidenceKind('image'); }}
+                                >
+                                  Enviar evidencia {n}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: '#b088c0' }}>Puedes enviar hasta 3 evidencias por reto.</span>
+                        </>
+                      )}
+                      {!approved && c.is_active && inWindow && (
+                        <button
+                          className="btn btn-success btn-sm"
+                          disabled={activeCount === 0 || completionRequested}
+                          title={activeCount === 0 ? 'Envía al menos una evidencia para poder completar el reto' : ''}
+                          onClick={() => handleCompleteChallenge(c.id)}
+                        >
+                          {completionRequested ? '⏳ En revisión' : 'Completé mi reto'}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               );

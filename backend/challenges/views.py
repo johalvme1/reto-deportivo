@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import Q
 from django.contrib.auth import get_user_model
-from .models import Challenge, ChallengeSubmission, Medal
+from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
 from points.models import DailyPoint
 
@@ -147,6 +147,7 @@ class ApproveUserView(APIView):
         first.reviewed_at = timezone.now()
         first.save()
         Medal.objects.get_or_create(user=target, challenge=challenge)
+        ChallengeCompletion.objects.filter(user=target, challenge=challenge, status='requested').update(status='approved')
 
         for s in pending.exclude(id=first.id):
             s.status = 'rejected'
@@ -156,6 +157,49 @@ class ApproveUserView(APIView):
             s.save()
 
         return Response({'ok': True, 'awarded': challenge.points})
+
+class CompleteChallengeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, challenge_id):
+        try:
+            challenge = Challenge.objects.get(id=challenge_id)
+        except Challenge.DoesNotExist:
+            return Response({'error': 'Reto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        if challenge.submissions.filter(user=request.user, status='approved').exists():
+            return Response({'error': 'Ya completaste este reto'}, status=status.HTTP_400_BAD_REQUEST)
+
+        has_evidence = challenge.submissions.filter(user=request.user).exclude(status='rejected').exists()
+        if not has_evidence:
+            return Response({'error': 'Envía al menos una evidencia antes de marcar tu reto como completado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        message = request.data.get('message', '')
+        completion, _ = ChallengeCompletion.objects.get_or_create(user=request.user, challenge=challenge)
+        completion.message = str(message).strip()
+        completion.status = 'requested'
+        completion.save()
+
+        return Response({'ok': True})
+
+class PendingCompletionsView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSupervisor]
+
+    def get(self, request):
+        completions = (
+            ChallengeCompletion.objects
+            .filter(status='requested')
+            .select_related('user', 'challenge')
+            .order_by('-requested_at')
+        )
+        return Response([{
+            'user': c.user_id,
+            'user_name': c.user.name or c.user.username,
+            'challenge': c.challenge_id,
+            'challenge_title': c.challenge.title,
+            'message': c.message,
+            'requested_at': c.requested_at.isoformat(),
+        } for c in completions])
 
 class DeleteSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSupervisor]
@@ -290,7 +334,18 @@ class ChallengeSubmissionsView(APIView):
         if status_filter:
             subs = subs.filter(status=status_filter)
 
-        return Response(ChallengeSubmissionSerializer(subs, many=True).data)
+        completions = ChallengeCompletion.objects.filter(
+            challenge=challenge, status='requested'
+        ).select_related('user')
+        return Response({
+            'submissions': ChallengeSubmissionSerializer(subs, many=True).data,
+            'completions': [{
+                'user': c.user_id,
+                'user_name': c.user.name or c.user.username,
+                'message': c.message,
+                'requested_at': c.requested_at.isoformat(),
+            } for c in completions],
+        })
 
 class MySubmissionsView(APIView):
     def get(self, request):

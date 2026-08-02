@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Challenge, ChallengeSubmission, Medal
+from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion
 
 class ChallengeSerializer(serializers.ModelSerializer):
     submissions_count = serializers.SerializerMethodField()
@@ -30,6 +30,9 @@ class ChallengeSerializer(serializers.ModelSerializer):
             'active_count': subs.exclude(status='rejected').count(),
             'max': 3,
             'total_points': obj.points if approved else 0,
+            'completion_requested': ChallengeCompletion.objects.filter(
+                user=request.user, challenge=obj, status='requested'
+            ).exists(),
             'submissions': [{
                 'id': s.id,
                 'status': s.status,

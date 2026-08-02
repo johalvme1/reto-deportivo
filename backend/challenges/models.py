@@ -64,3 +64,23 @@ class Medal(models.Model):
 
     def __str__(self):
         return f'Medalla: {self.user.name} - {self.challenge.title}'
+
+class ChallengeCompletion(models.Model):
+    STATUS_CHOICES = [
+        ('requested', 'Solicitado'),
+        ('approved', 'Aprobado'),
+        ('rejected', 'Rechazado'),
+    ]
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='completions')
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name='completions')
+    message = models.TextField(blank=True, default='', help_text='Mensaje del participante al marcar su reto como completado')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='requested')
+    requested_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'challenge')
+        ordering = ['-requested_at']
+
+    def __str__(self):
+        return f'{self.user} - {self.challenge.title} ({self.status})'

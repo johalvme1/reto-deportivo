@@ -260,6 +260,17 @@ export function approveUserSubmissions(challengeId, userId) {
   });
 }
 
+export function completeChallenge(challengeId, message) {
+  return request(`/challenges/${challengeId}/complete/`, {
+    method: 'POST',
+    body: JSON.stringify({ message: message || '' })
+  });
+}
+
+export function getPendingCompletions() {
+  return request('/challenges/completions/');
+}
+
 export function getMedals(mine) {
   const query = mine ? '?mine=true' : '';
   return request(`/challenges/medals/${query}`);

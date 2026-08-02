@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser, approveUserSubmissions } from '../api';
+import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
 
 function ChallengeManager() {
   const [challenges, setChallenges] = useState([]);
@@ -14,6 +14,8 @@ function ChallengeManager() {
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [submissions, setSubmissions] = useState([]);
+  const [completions, setCompletions] = useState([]);
+  const [pendingCompletions, setPendingCompletions] = useState([]);
   const [reviews, setReviews] = useState({});
   const [pendingUsers, setPendingUsers] = useState([]);
 
@@ -23,6 +25,15 @@ function ChallengeManager() {
     try { setChallenges(await getChallenges()); } catch {}
   };
   useEffect(() => { load(); }, []);
+
+  const loadPendingCompletions = async () => {
+    try { setPendingCompletions(await getPendingCompletions()); } catch {}
+  };
+  useEffect(() => {
+    loadPendingCompletions();
+    const t = setInterval(loadPendingCompletions, 10000);
+    return () => clearInterval(t);
+  }, []);
 
   const loadPending = async () => {
     try { setPendingUsers(await getPendingUsers()); } catch {}
@@ -46,7 +57,11 @@ function ChallengeManager() {
 
   const loadSubmissions = async (challengeId) => {
     setSelected(challengeId);
-    try { setSubmissions(await getChallengeSubmissions(challengeId)); } catch {}
+    try {
+      const data = await getChallengeSubmissions(challengeId);
+      setSubmissions(data.submissions || []);
+      setCompletions(data.completions || []);
+    } catch {}
   };
 
   const handleCreate = async (e) => {
@@ -124,6 +139,7 @@ function ChallengeManager() {
       await approveUserSubmissions(selected, userId);
       loadSubmissions(selected);
       load();
+      loadPendingCompletions();
     } catch (err) { alert(err.message); }
   };
 
@@ -135,6 +151,18 @@ function ChallengeManager() {
 
   return (
     <div>
+      {pendingCompletions.length > 0 && (
+        <div style={{ background: '#fff3cd', border: '1px solid #f0d48a', borderRadius: 10, padding: 12, marginBottom: 16 }}>
+          <strong>🚩 {pendingCompletions.length} participante(s) piden completar un reto:</strong>
+          {pendingCompletions.map((p, i) => (
+            <div key={i} style={{ marginTop: 4, fontSize: '0.88rem', color: '#8a6d1a' }}>
+              <strong>{p.user_name}</strong> · <strong>{p.challenge_title}</strong>
+              {p.message && <span> — "{p.message}"</span>}
+              <span style={{ fontSize: '0.75rem' }}> · {new Date(p.requested_at).toLocaleString('es')}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <h2>Gestionar Retos</h2>
       <form className="challenge-form" onSubmit={handleCreate}>
         <div className="form-group">
@@ -200,8 +228,14 @@ function ChallengeManager() {
           {Object.entries(groups).map(([uid, g]) => {
             const userApproved = g.items.some(x => x.status === 'approved');
             const hasPending = g.items.some(x => x.status === 'pending');
+            const completion = completions.find(c => c.user === uid);
             return (
               <div key={uid} style={{ border: '1px solid #f1e0f5', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+                {completion && (
+                  <div style={{ marginBottom: 8, background: '#fff3cd', border: '1px solid #f0d48a', borderRadius: 8, padding: 8, fontSize: '0.85rem', color: '#8a6d1a' }}>
+                    🚩 Este participante marcó su reto como <strong>completado</strong>{completion.message ? `: "${completion.message}"` : ' y espera tu revisión'} · {new Date(completion.requested_at).toLocaleString('es')}
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <strong>{g.name}</strong>
                   {userApproved
