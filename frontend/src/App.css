@@ -71,6 +71,11 @@ h3 { font-size: 1rem; margin-bottom: 8px; color: #8a5f96; }
   color: white;
   box-shadow: 0 2px 8px rgba(199,139,227,0.35);
 }
+.btn:disabled {
+  filter: grayscale(0.5) opacity(0.55);
+  cursor: not-allowed;
+  transform: none;
+}
 .btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .btn-primary:disabled { filter: grayscale(0.4) opacity(0.6); cursor: not-allowed; transform: none; }
 
