@@ -284,6 +284,13 @@ export function getEvidence() {
   return request('/challenges/evidence/');
 }
 
+export function toggleEvidenceLike(evidenceId) {
+  return request('/challenges/evidence/likes/', {
+    method: 'POST',
+    body: JSON.stringify({ evidence_id: evidenceId })
+  });
+}
+
 export function getMessages() {
   return request('/chat/');
 }

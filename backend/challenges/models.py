@@ -84,3 +84,15 @@ class ChallengeCompletion(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.challenge.title} ({self.status})'
+
+class EvidenceLike(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='evidence_likes')
+    evidence_id = models.CharField(max_length=32, db_index=True, help_text='ID de la evidencia (ej: c5, d3-img)')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'evidence_id')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} → {self.evidence_id}'

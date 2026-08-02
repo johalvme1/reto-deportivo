@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getEvidence } from '../api';
+import { getEvidence, toggleEvidenceLike } from '../api';
 import Lightbox from './Lightbox';
 
 const STATUS_LABEL = {
@@ -14,8 +14,10 @@ function formatDay(dateStr) {
   return d.toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-function EvidenceCard({ s, onOpen }) {
+function EvidenceCard({ s, onOpen, likes, onToggleLike }) {
   const [labelClass, label] = STATUS_LABEL[s.status] || ['', ''];
+  const liked = likes?.liked || false;
+  const likesCount = likes?.count || 0;
   return (
     <div className="evidence-item">
       {s.image && (
@@ -40,6 +42,29 @@ function EvidenceCard({ s, onOpen }) {
       <div style={{ fontSize: '0.75rem', color: '#c9a8d4' }}>
         {s.kind === 'daily' ? (s.title === 'Evidencia de pasos' ? '👟' : '📷') : '🏅'} {s.date}
       </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+        <button
+          onClick={() => onToggleLike(s.id)}
+          title={liked ? 'Quitar like' : 'Dar like'}
+          style={{
+            border: 'none',
+            background: liked ? 'linear-gradient(135deg, #f78ec6, #ef476f)' : '#f5eafa',
+            color: liked ? '#fff' : '#b088c0',
+            width: 34,
+            height: 34,
+            borderRadius: '50%',
+            fontSize: '1.05rem',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all .15s',
+          }}
+        >
+          {liked ? '❤️' : '🤍'}
+        </button>
+        <span style={{ fontSize: '0.8rem', color: '#8a5f96', fontWeight: 600 }}>{likesCount}</span>
+      </div>
     </div>
   );
 }
@@ -48,12 +73,30 @@ export default function EvidenceGallery() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(null);
+  const [likes, setLikes] = useState({});
 
   useEffect(() => {
     getEvidence()
-      .then(setItems)
+      .then(data => {
+        setItems(data);
+        const initial = {};
+        data.forEach(e => { initial[e.id] = { liked: e.liked, count: e.likes_count }; });
+        setLikes(initial);
+      })
       .catch(err => setError(err.message));
   }, []);
+
+  const handleToggleLike = async (id) => {
+    const prev = likes[id] || { liked: false, count: 0 };
+    setLikes({ ...likes, [id]: { liked: !prev.liked, count: Math.max(0, prev.count + (prev.liked ? -1 : 1)) } });
+    try {
+      const res = await toggleEvidenceLike(id);
+      setLikes(cur => ({ ...cur, [id]: { liked: res.liked, count: res.likes_count } }));
+    } catch (err) {
+      setLikes({ ...likes, [id]: prev });
+      setError(err.message);
+    }
+  };
 
   const days = useMemo(() => {
     const byDay = new Map();
@@ -85,7 +128,7 @@ export default function EvidenceGallery() {
             <div key={u.user_id} style={{ marginTop: 14, padding: '12px 14px', background: '#faf3fc', border: '1px solid #f1e0f5', borderRadius: 12 }}>
               <strong style={{ color: '#d9629f' }}>{u.user_name}</strong>
               <div className="evidence-grid" style={{ marginTop: 10 }}>
-                {u.evidences.map(s => <EvidenceCard key={s.id} s={s} onOpen={setPreview} />)}
+                {u.evidences.map(s => <EvidenceCard key={s.id} s={s} onOpen={setPreview} likes={likes[s.id]} onToggleLike={handleToggleLike} />)}
               </div>
             </div>
           ))}

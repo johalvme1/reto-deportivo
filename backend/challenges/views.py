@@ -3,10 +3,10 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.contrib.auth import get_user_model
 from datetime import timedelta
-from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion
+from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion, EvidenceLike
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
 from points.models import DailyPoint
 from chat.models import ChatMessage
@@ -289,6 +289,22 @@ class SupervisorDashboardView(APIView):
 
         return Response({'weeks': weeks, 'participants': participants})
 
+class EvidenceLikeToggleView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        evidence_id = (request.data.get('evidence_id') or '').strip()
+        if not evidence_id:
+            return Response({'error': 'Falta el campo evidence_id'}, status=status.HTTP_400_BAD_REQUEST)
+        like, created = EvidenceLike.objects.get_or_create(user=request.user, evidence_id=evidence_id)
+        if not created:
+            like.delete()
+        return Response({
+            'evidence_id': evidence_id,
+            'liked': created,
+            'likes_count': EvidenceLike.objects.filter(evidence_id=evidence_id).count(),
+        })
+
 class EvidenceGalleryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -372,6 +388,21 @@ class EvidenceGalleryView(APIView):
                 })
 
         items.sort(key=lambda e: e['sort_key'], reverse=True)
+
+        ids = [e['id'] for e in items]
+        like_counts = dict(
+            EvidenceLike.objects.filter(evidence_id__in=ids)
+            .values_list('evidence_id')
+            .annotate(c=Count('pk')).values_list('evidence_id', 'c')
+        )
+        my_likes = set(
+            EvidenceLike.objects.filter(evidence_id__in=ids, user=request.user)
+            .values_list('evidence_id', flat=True)
+        )
+        for e in items:
+            e['likes_count'] = like_counts.get(e['id'], 0)
+            e['liked'] = e['id'] in my_likes
+
         return Response(items)
 
 class ChallengeSubmissionsView(APIView):
