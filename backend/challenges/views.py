@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from datetime import timedelta
 from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
 from points.models import DailyPoint
@@ -232,6 +233,49 @@ class MedalsView(APIView):
         if request.query_params.get('mine') == 'true':
             medals = medals.filter(user=request.user)
         return Response(MedalSerializer(medals, many=True).data)
+
+class SupervisorDashboardView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSupervisor]
+
+    def get(self, request):
+        today = timezone.localdate()
+
+        weeks = []
+        for offset in range(7, -1, -1):
+            monday = today - timedelta(days=today.weekday() + offset * 7)
+            sunday = monday + timedelta(days=7)
+            medals = Medal.objects.filter(awarded_at__date__gte=monday, awarded_at__date__lt=sunday)
+            daily = DailyPoint.objects.filter(date__gte=monday, date__lt=sunday)
+            challenge_points = sum(m.challenge.points for m in medals)
+            daily_points = sum(dp.points for dp in daily)
+            weeks.append({
+                'week': monday.isoformat(),
+                'label': f'{monday.strftime("%d/%m")} - {(sunday - timedelta(days=1)).strftime("%d/%m")}',
+                'challenges_completed': medals.count(),
+                'challenge_points': challenge_points,
+                'daily_points': daily_points,
+                'total_points': challenge_points + daily_points,
+            })
+
+        participants = []
+        for u in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
+            medals = Medal.objects.filter(user=u)
+            daily = DailyPoint.objects.filter(user=u)
+            challenge_points = sum(m.challenge.points for m in medals)
+            daily_points = sum(dp.points for dp in daily)
+            participants.append({
+                'id': u.id,
+                'name': u.name or u.username,
+                'username': u.username,
+                'avatar': u.avatar.url if u.avatar else None,
+                'challenges_completed': medals.count(),
+                'challenge_points': challenge_points,
+                'daily_points': daily_points,
+                'total_points': challenge_points + daily_points,
+            })
+        participants.sort(key=lambda p: p['total_points'], reverse=True)
+
+        return Response({'weeks': weeks, 'participants': participants})
 
 class EvidenceGalleryView(APIView):
     permission_classes = [permissions.IsAuthenticated]

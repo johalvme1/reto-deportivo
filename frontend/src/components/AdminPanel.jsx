@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
+import SupervisorDashboard from './SupervisorDashboard';
 
 function ChallengeManager() {
   const [challenges, setChallenges] = useState([]);
@@ -314,10 +315,25 @@ function ChallengeManager() {
 }
 
 export default function AdminPanel() {
+  const [tab, setTab] = useState('gestion');
   return (
     <div className="card">
       <h1>Panel de Administración</h1>
-      <ChallengeManager />
+      <div className="admin-tabs">
+        <button
+          className={`admin-tab ${tab === 'gestion' ? 'active' : ''}`}
+          onClick={() => setTab('gestion')}
+        >
+          Gestión de Retos
+        </button>
+        <button
+          className={`admin-tab ${tab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setTab('dashboard')}
+        >
+          Dashboard
+        </button>
+      </div>
+      {tab === 'gestion' ? <ChallengeManager /> : <SupervisorDashboard />}
     </div>
   );
 }

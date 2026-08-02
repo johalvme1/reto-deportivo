@@ -271,6 +271,10 @@ export function getPendingCompletions() {
   return request('/challenges/completions/');
 }
 
+export function getSupervisorDashboard() {
+  return request('/challenges/dashboard/');
+}
+
 export function getMedals(mine) {
   const query = mine ? '?mine=true' : '';
   return request(`/challenges/medals/${query}`);
