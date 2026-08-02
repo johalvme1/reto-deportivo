@@ -116,7 +116,7 @@ class LeaderboardView(APIView):
             image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='') | Q(video__isnull=False) & ~Q(video='')),
             steps_points=Sum(
                 Case(
-                    When(steps__gt=5000, then=Value(1)),
+                    When(steps__gte=5000, then=Value(1)),
                     When(steps__gte=3000, then=Value(0.5)),
                     default=Value(0),
                     output_field=DecimalField(max_digits=10, decimal_places=2),

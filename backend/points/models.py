@@ -19,7 +19,7 @@ class DailyPoint(models.Model):
         count = 0
         if self.image or self.video: count += 1
         if self.steps is not None and self.steps_image:
-            if self.steps > 5000:
+            if self.steps >= 5000:
                 count += 1
             elif self.steps >= 3000:
                 count += 0.5

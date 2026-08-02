@@ -248,7 +248,7 @@ export default function Dashboard() {
               <input type="file" ref={stepsFileRef} accept="image/*" style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
               <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Adjunta una foto como evidencia</p>
               <p style={{ fontSize: '0.68rem', color: '#c9a8d4', marginTop: 2 }}>
-                0–2,999 → 0 pts · 3,000–5,000 → 0.5 pts · +5,000 → 1 pt
+                0–2,999 → 0 pts · 3,000–4,999 → 0.5 pts · +5,000 → 1 pt
               </p>
               <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={steps === '' || Number(steps) < 0}>Registrar</button>
             </div>
