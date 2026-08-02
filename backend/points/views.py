@@ -109,7 +109,7 @@ class LeaderboardView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        from django.db.models import Count, Q, Sum, Case, When, Value, DecimalField
+        from django.db.models import Count, Q, Sum, Case, When, Value, DecimalField, Max, F
         User = get_user_model()
 
         daily_agg = DailyPoint.objects.values('user').annotate(
@@ -127,10 +127,14 @@ class LeaderboardView(APIView):
         )
         daily_map = {entry['user']: entry for entry in daily_agg}
 
-        challenge_agg = ChallengeSubmission.objects.filter(status='approved').values('user').annotate(
-            extra_points=Sum('points_awarded')
+        challenge_agg = (
+            ChallengeSubmission.objects.filter(status='approved')
+            .values('user', 'challenge')
+            .annotate(challenge_pts=Max(F('challenge__points')))
         )
-        extra_map = {entry['user']: entry['extra_points'] for entry in challenge_agg}
+        extra_map = {}
+        for entry in challenge_agg:
+            extra_map[entry['user']] = extra_map.get(entry['user'], 0) + entry['challenge_pts']
 
         leaderboard = []
         for user in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):

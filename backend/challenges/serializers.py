@@ -29,7 +29,7 @@ class ChallengeSerializer(serializers.ModelSerializer):
             'count': subs.count(),
             'active_count': subs.exclude(status='rejected').count(),
             'max': 3,
-            'total_points': sum(s.points_awarded for s in approved),
+            'total_points': obj.points if approved else 0,
             'submissions': [{
                 'id': s.id,
                 'status': s.status,
@@ -61,6 +61,4 @@ class MedalSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'user_name', 'challenge', 'challenge_title', 'challenge_points', 'awarded_at']
 
     def get_challenge_points(self, obj):
-        return sum(
-            s.points_awarded for s in obj.challenge.submissions.filter(user=obj.user, status='approved')
-        )
+        return obj.challenge.points

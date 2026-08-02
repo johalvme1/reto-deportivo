@@ -107,10 +107,9 @@ function ChallengeManager() {
 
   const handleReview = async (submissionId, status) => {
     const r = reviews[submissionId] || {};
-    const points = status === 'approved' ? Number(r.points) || 0 : 0;
     const comment = (r.comment || '').trim();
     try {
-      await reviewSubmission(submissionId, status, points, comment);
+      await reviewSubmission(submissionId, status, null, comment);
       setReviews(prev => { const n = { ...prev }; delete n[submissionId]; return n; });
       loadSubmissions(selected);
       load();
@@ -200,15 +199,6 @@ function ChallengeManager() {
               {s.status === 'pending' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 280 }}>
                   <input
-                    type="number"
-                    min="0"
-                    max={s.challenge_points}
-                    placeholder={`Puntos (0-${s.challenge_points})`}
-                    value={reviews[s.id]?.points ?? s.challenge_points}
-                    onChange={e => setReview(s.id, 'points', e.target.value)}
-                    style={{ width: '100%' }}
-                  />
-                  <input
                     type="text"
                     placeholder="Comentario (ej: lo hiciste muy bien...)"
                     value={reviews[s.id]?.comment ?? ''}
@@ -216,7 +206,7 @@ function ChallengeManager() {
                     style={{ width: '100%' }}
                   />
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="btn btn-success btn-sm" onClick={() => handleReview(s.id, 'approved')}>Aprobar</button>
+                    <button className="btn btn-success btn-sm" onClick={() => handleReview(s.id, 'approved')}>Aprobar (+{s.challenge_points} pts)</button>
                     <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
                     <button className="btn btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
                   </div>

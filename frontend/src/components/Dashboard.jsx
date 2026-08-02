@@ -297,10 +297,15 @@ export default function Dashboard() {
                     )}
                     {us && us.submissions.length > 0 && (
                       <div style={{ marginTop: 6 }}>
+                        {approved && (
+                          <div style={{ marginBottom: 4 }}>
+                            <span className="badge" style={{ background: '#06d6a0', color: '#0d5c43' }}>🏅 Reto completado +{us.total_points} pts</span>
+                          </div>
+                        )}
                         {us.submissions.map(s => (
                           <div key={s.id} style={{ marginBottom: 4 }}>
                             <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`}>
-                              {s.status === 'approved' ? `Aprobado +${s.points_awarded} pts` : s.status === 'rejected' ? 'Rechazado' : 'Pendiente de revisión'}
+                              {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : 'Pendiente de revisión'}
                             </span>
                             {s.review_comment && <span style={{ fontSize: '0.78rem', color: '#b088c0', marginLeft: 8 }}>💬 {s.review_comment}</span>}
                           </div>

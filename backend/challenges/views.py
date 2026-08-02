@@ -96,12 +96,7 @@ class ReviewSubmissionView(APIView):
         submission.reviewed_at = timezone.now()
 
         if decision == 'approved':
-            try:
-                points = int(request.data.get('points'))
-            except (TypeError, ValueError):
-                points = submission.points_awarded or submission.challenge.points
-            points = max(0, min(points, submission.challenge.points))
-            submission.points_awarded = points
+            submission.points_awarded = submission.challenge.points
             submission.status = 'approved'
             Medal.objects.get_or_create(user=submission.user, challenge=submission.challenge)
         else:
