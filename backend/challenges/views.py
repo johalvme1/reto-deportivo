@@ -96,7 +96,10 @@ class ReviewSubmissionView(APIView):
         submission.reviewed_at = timezone.now()
 
         if decision == 'approved':
-            submission.points_awarded = submission.challenge.points
+            already_counted = submission.challenge.submissions.filter(
+                user=submission.user, status='approved'
+            ).exclude(id=submission.id).exists()
+            submission.points_awarded = 0 if already_counted else submission.challenge.points
             submission.status = 'approved'
             Medal.objects.get_or_create(user=submission.user, challenge=submission.challenge)
         else:
