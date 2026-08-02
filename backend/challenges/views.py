@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
 from points.models import DailyPoint
+from chat.models import ChatMessage
 
 User = get_user_model()
 
@@ -175,7 +176,12 @@ class CompleteChallengeView(APIView):
             return Response({'error': 'Envía al menos una evidencia antes de marcar tu reto como completado'}, status=status.HTTP_400_BAD_REQUEST)
 
         message = request.data.get('message', '')
-        completion, _ = ChallengeCompletion.objects.get_or_create(user=request.user, challenge=challenge)
+        completion, created = ChallengeCompletion.objects.get_or_create(user=request.user, challenge=challenge)
+        if completion.status != 'requested':
+            ChatMessage.objects.create(
+                user=request.user,
+                text=f'🏅 {request.user.name or request.user.username} marcó su reto "{challenge.title}" como completado',
+            )
         completion.message = str(message).strip()
         completion.status = 'requested'
         completion.save()
