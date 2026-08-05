@@ -42,6 +42,31 @@ async function request(url, options = {}) {
   return isJson ? JSON.parse(text) : text;
 }
 
+function uploadForm(url, formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API}${url}`);
+    const token = getToken();
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    if (onProgress) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          onProgress({ loaded: e.loaded, total: e.total, percent: Math.round((e.loaded / e.total) * 100) });
+        }
+      };
+    }
+    xhr.onload = () => {
+      let body = null;
+      try { body = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { body = xhr.responseText; }
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(body);
+      const msg = body && typeof body === 'object' ? (body.error || body.detail || 'Error del servidor') : `Error del servidor (${xhr.status})`;
+      reject(new Error(msg));
+    };
+    xhr.onerror = () => reject(new Error('Error de red'));
+    xhr.send(formData);
+  });
+}
+
 export function login(email, password) {
   return request('/auth/login/', {
     method: 'POST',
@@ -139,31 +164,17 @@ export function getLeaderboard() {
   return request('/points/leaderboard/');
 }
 
-export function uploadDailyEvidence(file, kind) {
+export function uploadDailyEvidence(file, kind, onProgress) {
   const formData = new FormData();
   formData.append(kind, file);
-  return fetch(`${API}/points/image/`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: formData
-  }).then(res => {
-    if (!res.ok) return res.json().then(e => { throw new Error(e.error); });
-    return res.json();
-  });
+  return uploadForm('/points/image/', formData, onProgress);
 }
 
-export function submitSteps(steps, file) {
+export function submitSteps(steps, file, onProgress) {
   const formData = new FormData();
   formData.append('steps', steps);
   formData.append('steps_image', file);
-  return fetch(`${API}/points/steps/`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: formData
-  }).then(res => {
-    if (!res.ok) return res.json().then(e => { throw new Error(e.error); });
-    return res.json();
-  });
+  return uploadForm('/points/steps/', formData, onProgress);
 }
 
 export function submitActivity(activityId) {
@@ -182,21 +193,14 @@ export function getChallenges(active) {
   return request(`/challenges/${query}`);
 }
 
-export function createChallenge(data, file) {
+export function createChallenge(data, file, onProgress) {
   if (file) {
     const formData = new FormData();
     Object.entries(data).forEach(([k, v]) => {
       if (v !== null && v !== undefined && v !== '') formData.append(k, v);
     });
     formData.append('video', file);
-    return fetch(`${API}/challenges/`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: formData
-    }).then(res => {
-      if (!res.ok) return res.json().then(e => { throw new Error(e.error || e.detail || 'Error del servidor'); });
-      return res.json();
-    });
+    return uploadForm('/challenges/', formData, onProgress);
   }
   return request('/challenges/', {
     method: 'POST',
@@ -217,22 +221,10 @@ export function deleteChallenge(id) {
   });
 }
 
-export function submitChallengeEvidence(challengeId, file, kind) {
+export function submitChallengeEvidence(challengeId, file, kind, onProgress) {
   const formData = new FormData();
   formData.append(kind, file);
-  return fetch(`${API}/challenges/${challengeId}/submit/`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: formData
-  }).then(async res => {
-    const isJson = (res.headers.get('content-type') || '').includes('application/json');
-    if (!res.ok) {
-      const body = isJson ? await res.json() : await res.text();
-      const msg = body && typeof body === 'object' ? (body.error || body.detail || 'Error del servidor') : `Error del servidor (${res.status})`;
-      throw new Error(msg);
-    }
-    return isJson ? res.json() : res.text();
-  });
+  return uploadForm(`/challenges/${challengeId}/submit/`, formData, onProgress);
 }
 
 export function getChallengeSubmissions(challengeId, status) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
+import DonutProgress from './DonutProgress';
 
 function ChallengeManager() {
   const [challenges, setChallenges] = useState([]);
@@ -21,6 +22,7 @@ function ChallengeManager() {
   const [reviews, setReviews] = useState({});
   const [pendingUsers, setPendingUsers] = useState([]);
   const [preview, setPreview] = useState(null);
+  const [uploading, setUploading] = useState(null);
 
   const buildDateTime = (d, t) => d ? `${d}T${t || '00:00'}` : null;
 
@@ -71,10 +73,12 @@ function ChallengeManager() {
     e.preventDefault();
     if (!title.trim() || !points) return;
     try {
-      await createChallenge({ title: title.trim(), description, points: Number(points), start_date: buildDateTime(startDate, startTime), end_date: buildDateTime(endDate, endTime) }, videoFile);
+      setUploading({ percent: 0, loaded: 0, total: 0, label: 'Subiendo video...' });
+      await createChallenge({ title: title.trim(), description, points: Number(points), start_date: buildDateTime(startDate, startTime), end_date: buildDateTime(endDate, endTime) }, videoFile, p => setUploading(p));
       setTitle(''); setDescription(''); setPoints(5); setStartDate(''); setStartTime('00:00'); setEndDate(''); setEndTime('23:59'); setVideoFile(null);
       load();
     } catch (err) { alert(err.message); }
+    finally { setUploading(null); }
   };
 
   const handleToggleActive = async (id) => {
@@ -179,7 +183,7 @@ function ChallengeManager() {
           <input type="file" accept="video/*" onChange={e => setVideoFile(e.target.files?.[0] || null)} />
           <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Los participantes podrán verlo aunque el reto aún no inicie.</p>
         </div>
-        <button type="submit" className="btn btn-primary">Crear Reto</button>
+        {uploading ? <DonutProgress {...uploading} /> : <button type="submit" className="btn btn-primary">Crear Reto</button>}
       </form>
 
       <div className="challenge-list">

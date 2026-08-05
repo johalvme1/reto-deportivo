@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals, getUnreadCount, completeChallenge } from '../api';
+import DonutProgress from './DonutProgress';
 
 function fmtCountdown(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [success, setSuccess] = useState('');
   const [now, setNow] = useState(Date.now());
   const [unread, setUnread] = useState(0);
+  const [uploads, setUploads] = useState({});
   const fileRef = useRef();
   const stepsFileRef = useRef();
   const evidenceFileRef = useRef();
@@ -69,16 +71,22 @@ export default function Dashboard() {
 
   useEffect(() => { loadData(); }, []);
 
+  const startUpload = (key, label) => setUploads(u => ({ ...u, [key]: { percent: 0, loaded: 0, total: 0, label } }));
+  const updateUpload = (key, p) => setUploads(u => ({ ...u, [key]: { ...u[key], ...p } }));
+  const endUpload = (key) => setUploads(u => { const n = { ...u }; delete n[key]; return n; });
+
   const handleImageUpload = async () => {
     const file = fileRef.current?.files?.[0];
     if (!file) return;
     setError(''); setSuccess('');
     try {
-      await uploadDailyEvidence(file, dailyKind);
+      startUpload('daily', 'Subiendo evidencia...');
+      await uploadDailyEvidence(file, dailyKind, p => updateUpload('daily', p));
       setSuccess('Evidencia subida! +1 punto');
       fileRef.current.value = '';
       loadData();
     } catch (err) { setError(err.message); }
+    finally { endUpload('daily'); }
   };
 
   const handleSteps = async () => {
@@ -86,13 +94,15 @@ export default function Dashboard() {
     if (steps === '' || Number(steps) < 0 || !file) return;
     setError(''); setSuccess('');
     try {
-      const res = await submitSteps(Number(steps), file);
+      startUpload('steps', 'Subiendo foto de pasos...');
+      const res = await submitSteps(Number(steps), file, p => updateUpload('steps', p));
       const pts = res?.points ?? 0;
       setSuccess(`Pasos registrados (${Number(steps).toLocaleString('es')}) con foto! +${pts} punto${pts === 1 ? '' : 's'}`);
       setSteps('');
       stepsFileRef.current.value = '';
       loadData();
     } catch (err) { setError(err.message); }
+    finally { endUpload('steps'); }
   };
 
   const handleActivity = async () => {
@@ -125,7 +135,8 @@ export default function Dashboard() {
     if (!file) return;
     setError(''); setSuccess('');
     try {
-      await submitChallengeEvidence(evidenceFor, file, evidenceKind);
+      startUpload('evidence', 'Subiendo evidencia...');
+      await submitChallengeEvidence(evidenceFor, file, evidenceKind, p => updateUpload('evidence', p));
       setSuccess(`Evidencia ${evidenceSlot} enviada! Espera la aprobación del supervisor para sumar puntos.`);
       setEvidenceFor(null);
       setEvidenceKind('image');
@@ -133,6 +144,7 @@ export default function Dashboard() {
       evidenceFileRef.current.value = '';
       loadData();
     } catch (err) { setError(err.message); }
+    finally { endUpload('evidence'); }
   };
 
   const handleCompleteChallenge = async (id) => {
@@ -232,7 +244,11 @@ export default function Dashboard() {
                 <option value="video">Video</option>
               </select>
               <input type="file" ref={fileRef} accept={dailyKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem', padding: 6, marginTop: 6 }} />
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleImageUpload}>Subir</button>
+              {uploads.daily ? (
+                <DonutProgress {...uploads.daily} />
+              ) : (
+                <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleImageUpload}>Subir</button>
+              )}
             </div>
           )}
         </div>
@@ -261,7 +277,11 @@ export default function Dashboard() {
               <p style={{ fontSize: '0.68rem', color: '#c9a8d4', marginTop: 2 }}>
                 0–2,999 → 0 pts · 3,000–4,999 → 0.5 pts · +5,000 → 1 pt
               </p>
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={steps === '' || Number(steps) < 0}>Registrar</button>
+              {uploads.steps ? (
+                <DonutProgress {...uploads.steps} />
+              ) : (
+                <button className="btn btn-primary btn-sm" style={{ marginTop: 6 }} onClick={handleSteps} disabled={steps === '' || Number(steps) < 0}>Registrar</button>
+              )}
             </div>
           )}
         </div>
@@ -335,10 +355,14 @@ export default function Dashboard() {
                         <option value="video">Video</option>
                       </select>
                       <input type="file" ref={evidenceFileRef} accept={evidenceKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem' }} />
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn btn-primary btn-sm" onClick={handleEvidence}>Enviar evidencia</button>
-                        <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceKind('image'); setEvidenceSlot(1); evidenceFileRef.current.value = ''; }}>Cancelar</button>
-                      </div>
+                      {uploads.evidence ? (
+                        <DonutProgress {...uploads.evidence} />
+                      ) : (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-primary btn-sm" onClick={handleEvidence}>Enviar evidencia</button>
+                          <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceKind('image'); setEvidenceSlot(1); evidenceFileRef.current.value = ''; }}>Cancelar</button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
