@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
-import { useAuth } from '../context/AuthContext';
+import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
 
 function ChallengeManager() {
-  const { user } = useAuth();
   const [challenges, setChallenges] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -105,25 +103,7 @@ function ChallengeManager() {
     } catch (err) { alert(err.message); }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Eliminar este reto? Se borrarán sus evidencias.')) return;
-    try {
-      await deleteChallenge(id);
-      if (selected === id) { setSelected(null); setSubmissions([]); }
-      load();
-    } catch (err) { alert(err.message); }
-  };
-
   const setReview = (id, field, value) => setReviews(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
-
-  const handleDeleteSubmission = async (submissionId) => {
-    if (!confirm('¿Eliminar esta evidencia? Liberará un espacio para que el participante la suba de nuevo.')) return;
-    try {
-      await deleteSubmission(submissionId);
-      loadSubmissions(selected);
-      load();
-    } catch (err) { alert(err.message); }
-  };
 
   const handleReview = async (submissionId, status) => {
     const r = reviews[submissionId] || {};
@@ -219,7 +199,6 @@ function ChallengeManager() {
               <button className="btn btn-primary btn-sm" onClick={() => loadSubmissions(c.id)}>Revisar evidencias</button>
               <button className="btn btn-warning btn-sm" onClick={() => handleToggleActive(c.id)}>{c.active ? 'Desactivar' : 'Activar'}</button>
               <button className="btn btn-warning btn-sm" onClick={() => handleEdit(c.id)}>Editar</button>
-              {user?.username === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id)}>Eliminar</button>}
             </div>
           </div>
         ))}
@@ -275,12 +254,6 @@ function ChallengeManager() {
                             style={{ width: 180 }}
                           />
                           <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
-                          <button className="btn btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
-                        </div>
-                      )}
-                      {s.status !== 'pending' && (
-                        <div style={{ marginTop: 6 }}>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteSubmission(s.id)}>Eliminar</button>
                         </div>
                       )}
                     </div>

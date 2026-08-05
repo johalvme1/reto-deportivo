@@ -43,9 +43,7 @@ class ChallengeViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
     def perform_destroy(self, instance):
-        if self.request.user.username != 'admin':
-            raise PermissionDenied('Solo el usuario "admin" puede eliminar retos')
-        instance.delete()
+        raise PermissionDenied('Eliminar retos solo se permite desde el panel de administración de Django (/admin/)')
 
 class SubmitEvidenceView(APIView):
     parser_classes = [MultiPartParser, FormParser]
@@ -218,20 +216,10 @@ class DeleteSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSupervisor]
 
     def delete(self, request, submission_id):
-        try:
-            submission = ChallengeSubmission.objects.get(id=submission_id)
-        except ChallengeSubmission.DoesNotExist:
-            return Response({'error': 'Evidencia no encontrada'}, status=status.HTTP_404_NOT_FOUND)
-
-        if submission.status == 'approved':
-            has_other_approved = submission.challenge.submissions.filter(
-                user=submission.user, status='approved'
-            ).exclude(id=submission.id).exists()
-            if not has_other_approved:
-                Medal.objects.filter(user=submission.user, challenge=submission.challenge).delete()
-
-        submission.delete()
-        return Response({'detail': 'Evidencia eliminada'}, status=status.HTTP_200_OK)
+        return Response(
+            {'error': 'Eliminar evidencias solo se permite desde el panel de administración de Django (/admin/)'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
 class MedalsView(APIView):
     def get(self, request):
