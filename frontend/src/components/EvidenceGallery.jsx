@@ -48,7 +48,7 @@ function EvidenceCard({ s, onOpen, likes, onToggleLike }) {
           title={liked ? 'Quitar like' : 'Dar like'}
           style={{
             border: 'none',
-            background: liked ? 'linear-gradient(135deg, #f78ec6, #ef476f)' : '#f5eafa',
+            background: liked ? '#1b74e4' : '#f5eafa',
             color: liked ? '#fff' : '#b088c0',
             width: 34,
             height: 34,
@@ -61,7 +61,7 @@ function EvidenceCard({ s, onOpen, likes, onToggleLike }) {
             transition: 'all .15s',
           }}
         >
-          {liked ? '❤️' : '🤍'}
+          <span style={{ filter: liked ? 'none' : 'grayscale(100%)', opacity: liked ? 1 : 0.7 }}>👍</span>
         </button>
         <span style={{ fontSize: '0.8rem', color: '#8a5f96', fontWeight: 600 }}>{likesCount}</span>
       </div>
