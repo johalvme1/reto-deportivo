@@ -275,12 +275,12 @@ class SupervisorDashboardView(APIView):
             user_daily = list(daily)
             user_weeks = []
             for monday, sunday in week_bounds:
-                mpts = sum(m.challenge.points for m in user_medals if monday.date() <= m.awarded_at.date() < sunday.date())
+                mpts = sum(m.challenge.points for m in user_medals if monday <= m.awarded_at.date() < sunday)
                 dpts = sum(dp.points for dp in user_daily if monday <= dp.date < sunday)
                 user_weeks.append({
                     'week': monday.isoformat(),
                     'label': f'{monday.strftime("%d/%m")} - {(sunday - timedelta(days=1)).strftime("%d/%m")}',
-                    'challenges_completed': sum(1 for m in user_medals if monday.date() <= m.awarded_at.date() < sunday.date()),
+                    'challenges_completed': sum(1 for m in user_medals if monday <= m.awarded_at.date() < sunday),
                     'challenge_points': mpts,
                     'daily_points': dpts,
                     'total_points': mpts + dpts,
