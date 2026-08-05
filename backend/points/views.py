@@ -139,7 +139,7 @@ class LeaderboardView(APIView):
         leaderboard = []
         for user in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
             d = daily_map.get(user.id, {})
-            total = float(d.get('image_count', 0) or 0) + float(d.get('steps_points', 0) or 0) + float(d.get('activity_count', 0) or 0) + float(extra_map.get(user.id, 0) or 0)
+            total = float(d.get('image_count', 0) or 0) + float(d.get('steps_points', 0) or 0) + float(d.get('activity_count', 0) or 0) + float(extra_map.get(user.id, 0) or 0) + float(user.bonus_points or 0)
             leaderboard.append({
                 'id': user.id,
                 'name': user.name or user.username,

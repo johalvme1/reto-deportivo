@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getChallenges, createChallenge, updateChallenge, deleteChallenge, getChallengeSubmissions, reviewSubmission, deleteSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
+import { useAuth } from '../context/AuthContext';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
 
 function ChallengeManager() {
+  const { user } = useAuth();
   const [challenges, setChallenges] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -217,7 +219,7 @@ function ChallengeManager() {
               <button className="btn btn-primary btn-sm" onClick={() => loadSubmissions(c.id)}>Revisar evidencias</button>
               <button className="btn btn-warning btn-sm" onClick={() => handleToggleActive(c.id)}>{c.active ? 'Desactivar' : 'Activar'}</button>
               <button className="btn btn-warning btn-sm" onClick={() => handleEdit(c.id)}>Editar</button>
-              <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id)}>Eliminar</button>
+              {user?.username === 'admin' && <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id)}>Eliminar</button>}
             </div>
           </div>
         ))}

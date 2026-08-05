@@ -10,6 +10,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     name = models.CharField(max_length=150, blank=True, default='')
     is_approved = models.BooleanField(default=True, help_text='Si es False, el usuario debe ser aprobado por un supervisor para poder ingresar')
+    bonus_points = models.DecimalField(max_digits=6, decimal_places=1, default=0, help_text='Puntos manuales que suman al ranking sin estar ligados a un reto')
 
     def __str__(self):
         return self.name or self.username

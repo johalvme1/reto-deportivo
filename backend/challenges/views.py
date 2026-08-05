@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
@@ -40,6 +41,11 @@ class ChallengeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    def perform_destroy(self, instance):
+        if self.request.user.username != 'admin':
+            raise PermissionDenied('Solo el usuario "admin" puede eliminar retos')
+        instance.delete()
 
 class SubmitEvidenceView(APIView):
     parser_classes = [MultiPartParser, FormParser]
@@ -302,7 +308,8 @@ class SupervisorDashboardView(APIView):
                 'challenges_completed': medals.count(),
                 'challenge_points': challenge_points,
                 'daily_points': daily_points,
-                'total_points': challenge_points + daily_points,
+                'bonus_points': float(u.bonus_points or 0),
+                'total_points': challenge_points + daily_points + float(u.bonus_points or 0),
                 'steps_total': sum(dp.steps for dp in steps_qs),
                 'steps_series': steps_series,
                 'weeks': user_weeks,
