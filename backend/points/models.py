@@ -14,6 +14,9 @@ class DailyPoint(models.Model):
     class Meta:
         unique_together = ['user', 'date']
 
+    def __str__(self):
+        return f'{self.user.name or self.user.username} - {self.date} ({self.points} pts)'
+
     @property
     def points(self):
         count = 0
