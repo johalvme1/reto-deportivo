@@ -317,8 +317,8 @@ export default function Dashboard() {
                         )}
                         {us.submissions.map(s => (
                           <div key={s.id} style={{ marginBottom: 4 }}>
-                            <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`}>
-                              {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : 'Pendiente de revisión'}
+                            <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : s.status === 'returned' ? '' : ''}`} style={s.status === 'returned' ? { background: '#fff3cd', color: '#8a6d1a' } : undefined}>
+                              {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : s.status === 'returned' ? 'Devuelto - vuelve a enviar' : 'Pendiente de revisión'}
                             </span>
                             {s.review_comment && <span style={{ fontSize: '0.78rem', color: '#b088c0', marginLeft: 8 }}>💬 {s.review_comment}</span>}
                           </div>

@@ -36,6 +36,7 @@ class ChallengeSubmission(models.Model):
         ('pending', 'Pendiente'),
         ('approved', 'Aprobado'),
         ('rejected', 'Rechazado'),
+        ('returned', 'Devuelto'),
     ]
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name='submissions')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='challenge_submissions')

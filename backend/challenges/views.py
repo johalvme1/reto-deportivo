@@ -71,7 +71,7 @@ class SubmitEvidenceView(APIView):
             return Response({'error': 'Debes subir una foto o un video como evidencia'}, status=status.HTTP_400_BAD_REQUEST)
 
         MAX_SUBMISSIONS = 3
-        active_count = ChallengeSubmission.objects.filter(challenge=challenge, user=request.user).exclude(status='rejected').count()
+        active_count = ChallengeSubmission.objects.filter(challenge=challenge, user=request.user).exclude(status__in=['rejected', 'returned']).count()
         if active_count >= MAX_SUBMISSIONS:
             return Response({'error': f'Ya subiste las {MAX_SUBMISSIONS} evidencias permitidas para este reto'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -93,11 +93,14 @@ class ReviewSubmissionView(APIView):
             return Response({'error': 'Evidencia no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
         decision = request.data.get('status')
-        if decision not in ['approved', 'rejected']:
+        if decision not in ['approved', 'rejected', 'returned']:
             return Response({'error': 'Acción inválida'}, status=status.HTTP_400_BAD_REQUEST)
 
         if submission.status == 'approved' and decision == 'approved':
             return Response({'error': 'Esta evidencia ya fue aprobada'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if decision == 'returned' and submission.status not in ['pending', 'returned']:
+            return Response({'error': 'Solo se pueden devolver evidencias pendientes'}, status=status.HTTP_400_BAD_REQUEST)
 
         comment = request.data.get('comment')
         if comment is not None:
@@ -116,6 +119,14 @@ class ReviewSubmissionView(APIView):
             submission.points_awarded = submission.challenge.points
             submission.status = 'approved'
             Medal.objects.get_or_create(user=submission.user, challenge=submission.challenge)
+        elif decision == 'returned':
+            submission.status = 'returned'
+            submission.points_awarded = 0
+            has_other_approved = submission.challenge.submissions.filter(
+                user=submission.user, status='approved'
+            ).exclude(id=submission.id).exists()
+            if not has_other_approved:
+                Medal.objects.filter(user=submission.user, challenge=submission.challenge).delete()
         else:
             submission.status = 'rejected'
             submission.points_awarded = 0

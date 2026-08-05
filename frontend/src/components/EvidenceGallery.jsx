@@ -6,7 +6,8 @@ import Lightbox from './Lightbox';
 const STATUS_LABEL = {
   approved: ['badge-supervisor', 'Aprobado'],
   pending: ['badge-participant', 'Pendiente'],
-  rejected: ['', 'Rechazado']
+  rejected: ['', 'Rechazado'],
+  returned: ['', 'Devuelto']
 };
 
 function formatDay(dateStr) {

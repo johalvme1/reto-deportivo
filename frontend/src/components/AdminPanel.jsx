@@ -239,8 +239,8 @@ function ChallengeManager() {
                       {s.video && <video src={s.video} muted style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, cursor: 'pointer', background: '#000' }} onClick={() => setPreview({ src: s.video, kind: 'video' })} />}
                     </div>
                     <div style={{ flex: 1, minWidth: 220 }}>
-                      <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : ''}`}>
-                        {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : 'Pendiente'}
+                      <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : s.status === 'returned' ? '' : ''}`} style={s.status === 'returned' ? { background: '#fff3cd', color: '#8a6d1a' } : undefined}>
+                        {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : s.status === 'returned' ? 'Devuelto' : 'Pendiente'}
                       </span>
                       {s.status === 'approved' && <span className="badge" style={{ marginLeft: 6, background: '#e6ffe9', color: '#0d5c43' }}>+{s.challenge_points} pts</span>}
                       {s.review_comment && <div style={{ marginTop: 4, fontSize: '0.82rem', color: '#b088c0' }}>💬 {s.review_comment}</div>}
@@ -253,6 +253,7 @@ function ChallengeManager() {
                             onChange={e => setReview(s.id, 'comment', e.target.value)}
                             style={{ width: 180 }}
                           />
+                          <button className="btn btn-warning btn-sm" onClick={() => handleReview(s.id, 'returned')}>Devolver</button>
                           <button className="btn btn-danger btn-sm" onClick={() => handleReview(s.id, 'rejected')}>Rechazar</button>
                         </div>
                       )}

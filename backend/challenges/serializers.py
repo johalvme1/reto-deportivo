@@ -27,7 +27,7 @@ class ChallengeSerializer(serializers.ModelSerializer):
         approved = [s for s in subs if s.status == 'approved']
         return {
             'count': subs.count(),
-            'active_count': subs.exclude(status='rejected').count(),
+            'active_count': subs.exclude(status__in=['rejected', 'returned']).count(),
             'max': 3,
             'total_points': obj.points if approved else 0,
             'completion_requested': ChallengeCompletion.objects.filter(
