@@ -90,6 +90,7 @@ function StepsLinesChart({ participants }) {
 export default function SupervisorDashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [userFilter, setUserFilter] = useState('all');
 
   useEffect(() => {
     getSupervisorDashboard().then(setData).catch(e => setError(e.message));
@@ -98,7 +99,14 @@ export default function SupervisorDashboard() {
   if (error) return <p style={{ color: '#ef476f' }}>{error}</p>;
   if (!data) return <p style={{ color: '#b088c0' }}>Cargando dashboard...</p>;
 
-  const totals = data.participants.reduce(
+  const filteredParticipants = userFilter === 'all'
+    ? data.participants
+    : data.participants.filter(p => String(p.id) === userFilter);
+  const selectedUser = userFilter === 'all'
+    ? null
+    : data.participants.find(p => String(p.id) === userFilter);
+
+  const totals = filteredParticipants.reduce(
     (acc, p) => ({
       challenges: acc.challenges + p.challenges_completed,
       challenge_pts: acc.challenge_pts + p.challenge_points,
@@ -108,12 +116,28 @@ export default function SupervisorDashboard() {
     { challenges: 0, challenge_pts: 0, daily_pts: 0, total: 0 }
   );
 
+  const weeklyRows = selectedUser ? selectedUser.weeks : data.weeks;
+  const chartParticipants = selectedUser ? [selectedUser] : data.participants;
+
   return (
     <div>
       <h2>Dashboard del Supervisor</h2>
       <p style={{ color: '#b088c0', fontSize: '0.85rem', marginBottom: 12 }}>
         Resumen semanal de retos completados y puntos (actividades diarias + retos) y totales por participante.
       </p>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        <label style={{ fontSize: '0.85rem', color: '#8a5f96', fontWeight: 600 }}>Ver participante:</label>
+        <select value={userFilter} onChange={e => setUserFilter(e.target.value)} style={{ width: 'auto', padding: '7px 12px' }}>
+          <option value="all">Todos</option>
+          {data.participants.map(p => (
+            <option key={p.id} value={String(p.id)}>{p.name}</option>
+          ))}
+        </select>
+        {selectedUser && (
+          <span className="badge badge-supervisor">Filtrando: {selectedUser.name}</span>
+        )}
+      </div>
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
         {[
@@ -142,7 +166,7 @@ export default function SupervisorDashboard() {
             </tr>
           </thead>
           <tbody>
-            {data.weeks.map(w => (
+            {weeklyRows.map(w => (
               <tr key={w.week}>
                 <td style={tdStyle}>{w.label}</td>
                 <td style={tdStyle}>{w.challenges_completed}</td>
@@ -169,7 +193,7 @@ export default function SupervisorDashboard() {
             </tr>
           </thead>
           <tbody>
-            {data.participants.map((p, i) => (
+            {filteredParticipants.map((p, i) => (
               <tr key={p.id} style={i === 0 ? { background: '#fdf6ee' } : undefined}>
                 <td style={tdStyle}>{i + 1}</td>
                 <td style={tdStyle}>
@@ -182,7 +206,7 @@ export default function SupervisorDashboard() {
                 <td style={{ ...tdStyle, ...numStyle }}><strong>{p.total_points}</strong></td>
               </tr>
             ))}
-            {data.participants.length === 0 && (
+            {filteredParticipants.length === 0 && (
               <tr><td colSpan="6" style={tdStyle}>Sin participantes</td></tr>
             )}
           </tbody>
@@ -193,7 +217,7 @@ export default function SupervisorDashboard() {
       <p style={{ color: '#b088c0', fontSize: '0.8rem', marginBottom: 8 }}>
         Últimos 30 días. Pasa el cursor sobre los puntos para ver el detalle.
       </p>
-      <StepsLinesChart participants={data.participants} />
+      <StepsLinesChart participants={chartParticipants} />
     </div>
   );
 }

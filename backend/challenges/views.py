@@ -259,11 +259,32 @@ class SupervisorDashboardView(APIView):
 
         participants = []
         start_day = today - timedelta(days=29)
+        week_bounds = []
+        for offset in range(7, -1, -1):
+            monday = today - timedelta(days=today.weekday() + offset * 7)
+            sunday = monday + timedelta(days=7)
+            week_bounds.append((monday, sunday))
+
         for u in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
             medals = Medal.objects.filter(user=u)
             daily = DailyPoint.objects.filter(user=u)
             challenge_points = sum(m.challenge.points for m in medals)
             daily_points = sum(dp.points for dp in daily)
+
+            user_medals = list(medals.select_related('challenge'))
+            user_daily = list(daily)
+            user_weeks = []
+            for monday, sunday in week_bounds:
+                mpts = sum(m.challenge.points for m in user_medals if monday.date() <= m.awarded_at.date() < sunday.date())
+                dpts = sum(dp.points for dp in user_daily if monday <= dp.date < sunday)
+                user_weeks.append({
+                    'week': monday.isoformat(),
+                    'label': f'{monday.strftime("%d/%m")} - {(sunday - timedelta(days=1)).strftime("%d/%m")}',
+                    'challenges_completed': sum(1 for m in user_medals if monday.date() <= m.awarded_at.date() < sunday.date()),
+                    'challenge_points': mpts,
+                    'daily_points': dpts,
+                    'total_points': mpts + dpts,
+                })
 
             steps_qs = DailyPoint.objects.filter(user=u, date__gte=start_day, steps__isnull=False)
             steps_by_day = {dp.date.isoformat(): dp.steps for dp in steps_qs}
@@ -284,6 +305,7 @@ class SupervisorDashboardView(APIView):
                 'total_points': challenge_points + daily_points,
                 'steps_total': sum(dp.steps for dp in steps_qs),
                 'steps_series': steps_series,
+                'weeks': user_weeks,
             })
         participants.sort(key=lambda p: p['total_points'], reverse=True)
 
