@@ -240,7 +240,7 @@ export default function SupervisorDashboard() {
               (p.daily || []).map(d => ({
                 ...d,
                 name: p.name,
-                dateFmt: new Date(d.date + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' }),
+                dateFmt: new Date(d.date + 'T00:00:00').toLocaleDateString('es', { day: '2-digit', month: '2-digit', year: 'numeric' }),
               }))
             ).map((d, i) => (
               <tr key={`${d.name}-${d.date}`} style={i % 2 ? { background: '#fbf7fd' } : undefined}>
