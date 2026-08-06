@@ -71,6 +71,7 @@ function ChallengeManager() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    if (uploading) return;
     if (!title.trim() || !points) return;
     try {
       setUploading({ percent: 0, loaded: 0, total: 0, label: 'Subiendo video...' });
@@ -180,7 +181,7 @@ function ChallengeManager() {
         </div>
         <div className="form-group">
           <label>Video explicativo (opcional)</label>
-          <input type="file" accept="video/*" onChange={e => setVideoFile(e.target.files?.[0] || null)} />
+          <input type="file" accept="video/*" disabled={!!uploading} onChange={e => setVideoFile(e.target.files?.[0] || null)} />
           <p style={{ fontSize: '0.72rem', color: '#b088c0', marginTop: 4 }}>Los participantes podrán verlo aunque el reto aún no inicie.</p>
         </div>
         {uploading ? <DonutProgress {...uploading} /> : <button type="submit" className="btn btn-primary">Crear Reto</button>}

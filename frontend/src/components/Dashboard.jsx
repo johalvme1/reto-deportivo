@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [evidenceFor, setEvidenceFor] = useState(null);
   const [evidenceKind, setEvidenceKind] = useState('image');
   const [evidenceSlot, setEvidenceSlot] = useState(1);
+  const [evidenceSent, setEvidenceSent] = useState(null);
   const [dailyKind, setDailyKind] = useState('image');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -72,10 +73,11 @@ export default function Dashboard() {
   useEffect(() => { loadData(); }, []);
 
   const startUpload = (key, label) => setUploads(u => ({ ...u, [key]: { percent: 0, loaded: 0, total: 0, label } }));
-  const updateUpload = (key, p) => setUploads(u => ({ ...u, [key]: { ...u[key], ...p } }));
+  const updateUpload = (key, p) => setUploads(u => (u[key] ? { ...u, [key]: { ...u[key], ...p } } : u));
   const endUpload = (key) => setUploads(u => { const n = { ...u }; delete n[key]; return n; });
 
   const handleImageUpload = async () => {
+    if (uploads.daily) return;
     const file = fileRef.current?.files?.[0];
     if (!file) return;
     setError(''); setSuccess('');
@@ -90,6 +92,7 @@ export default function Dashboard() {
   };
 
   const handleSteps = async () => {
+    if (uploads.steps) return;
     const file = stepsFileRef.current?.files?.[0];
     if (steps === '' || Number(steps) < 0 || !file) return;
     setError(''); setSuccess('');
@@ -130,6 +133,7 @@ export default function Dashboard() {
   };
 
   const handleEvidence = async () => {
+    if (uploads.evidence) return;
     if (!evidenceFor) return;
     const file = evidenceFileRef.current?.files?.[0];
     if (!file) return;
@@ -137,10 +141,8 @@ export default function Dashboard() {
     try {
       startUpload('evidence', 'Subiendo evidencia...');
       await submitChallengeEvidence(evidenceFor, file, evidenceKind, p => updateUpload('evidence', p));
+      setEvidenceSent(evidenceSlot);
       setSuccess(`Evidencia ${evidenceSlot} enviada! Espera la aprobación del supervisor para sumar puntos.`);
-      setEvidenceFor(null);
-      setEvidenceKind('image');
-      setEvidenceSlot(1);
       evidenceFileRef.current.value = '';
       loadData();
     } catch (err) { setError(err.message); }
@@ -349,19 +351,28 @@ export default function Dashboard() {
                   </div>
                   {evidenceFor === c.id ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                      <strong style={{ fontSize: '0.8rem', color: '#d9629f' }}>Evidencia {evidenceSlot}</strong>
-                      <select value={evidenceKind} onChange={e => setEvidenceKind(e.target.value)}>
-                        <option value="image">Foto</option>
-                        <option value="video">Video</option>
-                      </select>
-                      <input type="file" ref={evidenceFileRef} accept={evidenceKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem' }} />
-                      {uploads.evidence ? (
-                        <DonutProgress {...uploads.evidence} />
+                      {evidenceSent ? (
+                        <>
+                          <span className="badge badge-supervisor">✅ Evidencia {evidenceSent} enviada · Pendiente de revisión</span>
+                          <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceSent(null); setEvidenceKind('image'); setEvidenceSlot(1); }}>Listo</button>
+                        </>
                       ) : (
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button className="btn btn-primary btn-sm" onClick={handleEvidence}>Enviar evidencia</button>
-                          <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceKind('image'); setEvidenceSlot(1); evidenceFileRef.current.value = ''; }}>Cancelar</button>
-                        </div>
+                        <>
+                          <strong style={{ fontSize: '0.8rem', color: '#d9629f' }}>Evidencia {evidenceSlot}</strong>
+                          <select value={evidenceKind} onChange={e => setEvidenceKind(e.target.value)}>
+                            <option value="image">Foto</option>
+                            <option value="video">Video</option>
+                          </select>
+                          <input type="file" ref={evidenceFileRef} accept={evidenceKind === 'image' ? 'image/*' : 'video/*'} style={{ fontSize: '0.8rem' }} />
+                          {uploads.evidence ? (
+                            <DonutProgress {...uploads.evidence} />
+                          ) : (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button className="btn btn-primary btn-sm" onClick={handleEvidence}>Enviar evidencia</button>
+                              <button className="btn btn-sm" onClick={() => { setEvidenceFor(null); setEvidenceSent(null); setEvidenceKind('image'); setEvidenceSlot(1); evidenceFileRef.current.value = ''; }}>Cancelar</button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ) : (
@@ -376,7 +387,7 @@ export default function Dashboard() {
                                   key={n}
                                   className="btn btn-primary btn-sm"
                                   disabled={used}
-                                  onClick={() => { setEvidenceFor(c.id); setEvidenceSlot(n); setEvidenceKind('image'); }}
+                                  onClick={() => { setEvidenceFor(c.id); setEvidenceSlot(n); setEvidenceKind('image'); setEvidenceSent(null); }}
                                 >
                                   Enviar evidencia {n}
                                 </button>
