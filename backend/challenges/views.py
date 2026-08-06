@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from datetime import timedelta
 from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion, EvidenceLike
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
+from accounts.permissions import is_supervisor_user
 from points.models import DailyPoint
 from chat.models import ChatMessage
 
@@ -18,7 +19,7 @@ class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
         action = getattr(view, 'action', None)
         if action is None or action in ['create', 'update', 'partial_update', 'destroy']:
-            return request.user.is_authenticated and (request.user.role == 'supervisor' or request.user.is_superuser)
+            return is_supervisor_user(request.user)
         return request.user.is_authenticated
 
 class ChallengeViewSet(viewsets.ModelViewSet):
@@ -442,7 +443,7 @@ class ChallengeSubmissionsView(APIView):
         except Challenge.DoesNotExist:
             return Response({'error': 'Reto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
-        is_supervisor = request.user.role == 'supervisor' or request.user.is_superuser
+        is_supervisor = is_supervisor_user(request.user)
 
         if not is_supervisor and not challenge.submissions.filter(user=request.user).exists():
             return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)

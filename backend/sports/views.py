@@ -1,11 +1,12 @@
 from rest_framework import viewsets, permissions
 from .models import Sport
 from .serializers import SportSerializer
+from accounts.permissions import is_supervisor_user
 
 class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
         if view.action in ['create', 'update', 'partial_update', 'destroy']:
-            return request.user.is_authenticated and (request.user.role == 'supervisor' or request.user.is_superuser)
+            return is_supervisor_user(request.user)
         return True
 
 class SportViewSet(viewsets.ModelViewSet):

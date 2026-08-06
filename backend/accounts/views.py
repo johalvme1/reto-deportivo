@@ -5,10 +5,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import User
 from .serializers import RegisterSerializer, UserSerializer
+from .permissions import is_supervisor_user
 
 class IsAdminUser(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (request.user.role == 'supervisor' or request.user.is_superuser)
+        return is_supervisor_user(request.user)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()

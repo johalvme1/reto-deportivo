@@ -1,11 +1,12 @@
 from rest_framework import viewsets, permissions
 from .models import Activity
 from .serializers import ActivitySerializer
+from accounts.permissions import is_supervisor_user
 
 class IsSupervisorForModification(permissions.BasePermission):
     def has_permission(self, request, view):
         if view.action in ['update', 'partial_update', 'destroy']:
-            return request.user.is_authenticated and (request.user.role == 'supervisor' or request.user.is_superuser)
+            return is_supervisor_user(request.user)
         return request.user.is_authenticated
 
 class ActivityViewSet(viewsets.ModelViewSet):
