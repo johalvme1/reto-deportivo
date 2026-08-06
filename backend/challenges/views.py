@@ -65,6 +65,9 @@ class SubmitEvidenceView(APIView):
         if challenge.end_date and now > challenge.end_date:
             return Response({'error': 'Este reto ya terminó, no se pueden enviar evidencias'}, status=status.HTTP_400_BAD_REQUEST)
 
+        if challenge.submissions.filter(user=request.user, status='approved').exists():
+            return Response({'error': 'Ya completaste este reto con una evidencia aprobada'}, status=status.HTTP_400_BAD_REQUEST)
+
         image = request.FILES.get('image')
         video = request.FILES.get('video')
 
@@ -168,13 +171,12 @@ class ApproveUserView(APIView):
         ChallengeCompletion.objects.filter(user=target, challenge=challenge, status='requested').update(status='approved')
 
         for s in pending.exclude(id=first.id):
-            s.status = 'rejected'
+            s.status = 'approved'
             s.points_awarded = 0
-            s.review_comment = 'Reto completado con otra evidencia'
             s.reviewed_at = timezone.now()
             s.save()
 
-        return Response({'ok': True, 'awarded': challenge.points})
+        return Response({'ok': True, 'awarded': challenge.points, 'approved': pending.count()})
 
 class CompleteChallengeView(APIView):
     permission_classes = [permissions.IsAuthenticated]

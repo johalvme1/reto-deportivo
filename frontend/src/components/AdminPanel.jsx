@@ -123,7 +123,7 @@ function ChallengeManager() {
   const handleApproveUser = async (userId) => {
     const g = groups[userId];
     if (!g) return;
-    if (!confirm(`¿Aprobar a ${g.name}? Se otorgarán ${g.items[0].challenge_points} pts y sus demás evidencias quedarán rechazadas.`)) return;
+    if (!confirm(`¿Aprobar a ${g.name}? Todas sus evidencias pendientes quedarán aprobadas y se otorgarán ${g.items[0].challenge_points} pts una sola vez.`)) return;
     try {
       await approveUserSubmissions(selected, userId);
       loadSubmissions(selected);
@@ -227,7 +227,7 @@ function ChallengeManager() {
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <strong>{g.name}</strong>
                   {userApproved
-                    ? <span className="badge badge-supervisor">🏅 Reto completado</span>
+                    ? <span className="badge badge-supervisor">🏅 Reto completado (+{g.items[0].challenge_points} pts)</span>
                     : hasPending
                       ? <span className="badge" style={{ background: '#fff3cd', color: '#8a6d1a' }}>Pendiente de revisión</span>
                       : <span className="badge badge-participant">Sin aprobar</span>}
@@ -246,7 +246,7 @@ function ChallengeManager() {
                       <span className={`badge ${s.status === 'approved' ? 'badge-supervisor' : s.status === 'rejected' ? 'badge-participant' : s.status === 'returned' ? '' : ''}`} style={s.status === 'returned' ? { background: '#fff3cd', color: '#8a6d1a' } : undefined}>
                         {s.status === 'approved' ? 'Aprobado' : s.status === 'rejected' ? 'Rechazado' : s.status === 'returned' ? 'Devuelto' : 'Pendiente'}
                       </span>
-                      {s.status === 'approved' && <span className="badge" style={{ marginLeft: 6, background: '#e6ffe9', color: '#0d5c43' }}>+{s.challenge_points} pts</span>}
+                      {s.status === 'approved' && s.points_awarded > 0 && <span className="badge" style={{ marginLeft: 6, background: '#e6ffe9', color: '#0d5c43' }}>+{s.points_awarded} pts</span>}
                       {s.review_comment && <div style={{ marginTop: 4, fontSize: '0.82rem', color: '#b088c0' }}>💬 {s.review_comment}</div>}
                       {s.status === 'pending' && (
                         <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
