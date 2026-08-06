@@ -218,6 +218,53 @@ export default function SupervisorDashboard() {
         Últimos 30 días. Pasa el cursor sobre los puntos para ver el detalle.
       </p>
       <StepsLinesChart participants={chartParticipants} />
+
+      <h3>📋 Actividades diarias por persona</h3>
+      <p style={{ color: '#b088c0', fontSize: '0.8rem', marginBottom: 8 }}>
+        Detalle de la evidencia y la actividad física registrada por cada participante.
+      </p>
+      <div style={{ overflowX: 'auto', maxHeight: 400, overflowY: 'auto' }}>
+        <table style={tableStyle}>
+          <thead style={{ position: 'sticky', top: 0, background: '#fff' }}>
+            <tr>
+              <th style={thStyle}>Participante</th>
+              <th style={thStyle}>Fecha</th>
+              <th style={thStyle}>Evidencia</th>
+              <th style={{ ...thStyle, ...numStyle }}>Pasos</th>
+              <th style={thStyle}>Actividad</th>
+              <th style={{ ...thStyle, ...numStyle }}>Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredParticipants.flatMap(p =>
+              (p.daily || []).map(d => ({
+                ...d,
+                name: p.name,
+                dateFmt: new Date(d.date + 'T00:00:00').toLocaleDateString('es', { day: 'numeric', month: 'short' }),
+              }))
+            ).map((d, i) => (
+              <tr key={`${d.name}-${d.date}`} style={i % 2 ? { background: '#fbf7fd' } : undefined}>
+                <td style={tdStyle}><strong>{d.name}</strong></td>
+                <td style={tdStyle}>{d.dateFmt}</td>
+                <td style={tdStyle}>
+                  {d.image && d.video ? '📷 + 🎬'
+                    : d.image ? '📷'
+                    : d.video ? '🎬'
+                    : d.steps ? '👟 pasos'
+                    : d.activity ? '⚡ actividad'
+                    : '—'}
+                </td>
+                <td style={{ ...tdStyle, ...numStyle }}>{d.steps != null ? Number(d.steps).toLocaleString('es') : '—'}</td>
+                <td style={tdStyle}>{d.activity || '—'}</td>
+                <td style={{ ...tdStyle, ...numStyle }}><strong>{d.points}</strong></td>
+              </tr>
+            ))}
+            {filteredParticipants.every(p => !(p.daily || []).length) && (
+              <tr><td colSpan="6" style={tdStyle}>Sin registros diarios</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

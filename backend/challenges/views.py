@@ -315,6 +315,14 @@ class SupervisorDashboardView(APIView):
                 'steps_total': sum(dp.steps for dp in steps_qs),
                 'steps_series': steps_series,
                 'weeks': user_weeks,
+                'daily': [{
+                    'date': d.date.isoformat(),
+                    'image': bool(d.image),
+                    'video': bool(d.video),
+                    'steps': d.steps,
+                    'activity': d.activity.name if d.activity_id else None,
+                    'points': d.points,
+                } for d in user_daily],
             })
         participants.sort(key=lambda p: p['total_points'], reverse=True)
 
