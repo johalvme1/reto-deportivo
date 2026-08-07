@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions, getUsers, deleteUser } from '../api';
+import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions, getUsers, deleteUser, requestPasswordReset } from '../api';
 import { useAuth } from '../context/AuthContext';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
@@ -24,6 +24,8 @@ function ChallengeManager() {
   const [reviews, setReviews] = useState({});
   const [pendingUsers, setPendingUsers] = useState([]);
   const [users, setUsers] = useState([]);
+  const [reset, setReset] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(null);
 
@@ -60,6 +62,24 @@ function ChallengeManager() {
       alert('Usuario eliminado');
       loadUsers();
     } catch (err) { alert(err.message); }
+  };
+
+  const handleResetPassword = async (u) => {
+    setCopied(false);
+    try {
+      const res = await requestPasswordReset(u.id);
+      setReset({ name: u.name || u.username, url: res.reset_url });
+    } catch (err) { alert(err.message); }
+  };
+
+  const copyReset = async () => {
+    if (!reset) return;
+    try {
+      await navigator.clipboard.writeText(reset.url);
+      setCopied(true);
+    } catch {
+      prompt('Copia el enlace:', reset.url);
+    }
   };
 
   const handleApprove = async (id) => {
@@ -336,8 +356,9 @@ function ChallengeManager() {
                     <td style={{ padding: '8px 10px' }}>{u.email}</td>
                     <td style={{ padding: '8px 10px' }}>{u.role === 'supervisor' ? 'Supervisor' : 'Participante'}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                      <button className="btn btn-warning btn-sm" onClick={() => handleResetPassword(u)}>🔑 Restablecer contraseña</button>
                       {u.id !== user.id && (
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(u)}>Eliminar</button>
+                        <button className="btn btn-danger btn-sm" style={{ marginLeft: 6 }} onClick={() => handleDeleteUser(u)}>Eliminar</button>
                       )}
                     </td>
                   </tr>
@@ -348,6 +369,19 @@ function ChallengeManager() {
               </tbody>
             </table>
           </div>
+          {reset && (
+            <div style={{ border: '1px solid #f0d48a', background: '#fff3cd', borderRadius: 10, padding: 12, marginTop: 12 }}>
+              <strong>🔑 Enlace para {reset.name}</strong>
+              <p style={{ fontSize: '0.82rem', color: '#8a6d1a', margin: '6px 0' }}>
+                Comparte este enlace con el usuario. Al abrirlo podrá escribir una contraseña nueva (válido hasta que cambie la contraseña).
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input readOnly value={reset.url} style={{ flex: 1, minWidth: 220 }} onClick={e => e.target.select()} />
+                <button className="btn btn-primary btn-sm" onClick={copyReset}>{copied ? '✅ Copiado' : 'Copiar enlace'}</button>
+                <button className="btn btn-sm" onClick={() => setReset(null)}>Cerrar</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {preview && <Lightbox src={preview.src} kind={preview.kind} onClose={() => setPreview(null)} />}
