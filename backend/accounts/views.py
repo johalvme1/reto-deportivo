@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from .models import User
 from .serializers import RegisterSerializer, UserSerializer
 from .permissions import is_supervisor_user
@@ -94,3 +95,39 @@ class ProfileView(APIView):
             user.avatar = data['avatar']
         user.save()
         return Response(UserSerializer(user).data)
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        try:
+            user = User.objects.get(id=user_id)
+        except (User.DoesNotExist, TypeError, ValueError):
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        token = PasswordResetTokenGenerator().make_token(user)
+        scheme = 'https' if request.is_secure() else 'http'
+        reset_url = f'{scheme}://{request.get_host()}/reset-password?token={token}&user={user.id}'
+        return Response({'reset_url': reset_url})
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        token = request.data.get('token')
+        password = request.data.get('password')
+        if not user_id or not token or not password:
+            return Response({'error': 'Faltan datos para restablecer la contraseña'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(id=user_id)
+        except (User.DoesNotExist, TypeError, ValueError):
+            return Response({'error': 'Enlace inválido o expirado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not PasswordResetTokenGenerator().check_token(user, token):
+            return Response({'error': 'Enlace inválido o expirado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(password)
+        user.save(update_fields=['password'])
+        return Response({'detail': 'Contraseña actualizada. Ya puedes iniciar sesión.'})

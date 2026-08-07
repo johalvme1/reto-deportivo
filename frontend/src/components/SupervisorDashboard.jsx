@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSupervisorDashboard } from '../api';
+import { getSupervisorDashboard, requestPasswordReset } from '../api';
 
 const tableStyle = {
   width: '100%',
@@ -91,6 +91,26 @@ export default function SupervisorDashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [userFilter, setUserFilter] = useState('all');
+  const [reset, setReset] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleReset = async (p) => {
+    setCopied(false);
+    try {
+      const res = await requestPasswordReset(p.id);
+      setReset({ name: p.name, url: res.reset_url });
+    } catch (e) { alert(e.message); }
+  };
+
+  const copyReset = async () => {
+    if (!reset) return;
+    try {
+      await navigator.clipboard.writeText(reset.url);
+      setCopied(true);
+    } catch {
+      prompt('Copia el enlace:', reset.url);
+    }
+  };
 
   useEffect(() => {
     getSupervisorDashboard().then(setData).catch(e => setError(e.message));
@@ -190,6 +210,7 @@ export default function SupervisorDashboard() {
               <th style={{ ...thStyle, ...numStyle }}>Pts retos</th>
               <th style={{ ...thStyle, ...numStyle }}>Pts actividades</th>
               <th style={{ ...thStyle, ...numStyle }}>Total</th>
+              <th style={thStyle}>Acción</th>
             </tr>
           </thead>
           <tbody>
@@ -204,14 +225,31 @@ export default function SupervisorDashboard() {
                 <td style={{ ...tdStyle, ...numStyle }}>{p.challenge_points}</td>
                 <td style={{ ...tdStyle, ...numStyle }}>{p.daily_points}</td>
                 <td style={{ ...tdStyle, ...numStyle }}><strong>{p.total_points}</strong></td>
+                <td style={tdStyle}>
+                  <button className="btn btn-warning btn-sm" onClick={() => handleReset(p)}>🔑 Restablecer contraseña</button>
+                </td>
               </tr>
             ))}
             {filteredParticipants.length === 0 && (
-              <tr><td colSpan="6" style={tdStyle}>Sin participantes</td></tr>
+              <tr><td colSpan="7" style={tdStyle}>Sin participantes</td></tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {reset && (
+        <div style={{ border: '1px solid #f0d48a', background: '#fff3cd', borderRadius: 10, padding: 12, marginTop: 16 }}>
+          <strong>🔑 Enlace para {reset.name}</strong>
+          <p style={{ fontSize: '0.82rem', color: '#8a6d1a', margin: '6px 0' }}>
+            Comparte este enlace con el participante. Al abrirlo podrá escribir una contraseña nueva (válido hasta que cambie la contraseña).
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input readOnly value={reset.url} style={{ flex: 1, minWidth: 220 }} onClick={e => e.target.select()} />
+            <button className="btn btn-primary btn-sm" onClick={copyReset}>{copied ? '✅ Copiado' : 'Copiar enlace'}</button>
+            <button className="btn btn-sm" onClick={() => setReset(null)}>Cerrar</button>
+          </div>
+        </div>
+      )}
 
       <h3>👟 Total de pasos diarios por participante</h3>
       <p style={{ color: '#b088c0', fontSize: '0.8rem', marginBottom: 8 }}>

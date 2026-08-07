@@ -96,6 +96,20 @@ export function reviewUser(userId, action) {
   });
 }
 
+export function requestPasswordReset(userId) {
+  return request('/auth/password-reset/request/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId })
+  });
+}
+
+export function confirmPasswordReset(userId, token, password) {
+  return request('/auth/password-reset/confirm/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, token, password })
+  });
+}
+
 export function updateProfile(data) {
   return request('/auth/profile/', {
     method: 'PUT',
