@@ -63,7 +63,7 @@ class RenameTeamView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSupervisorRole]
 
     def post(self, request):
-        team = getattr(request.user, 'supervised_team', None)
+        team = Team.objects.filter(supervisor=request.user).first()
         if not team:
             return Response({'error': 'Primero crea tu equipo'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -84,7 +84,7 @@ class CreateInvitationView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSupervisorRole]
 
     def post(self, request):
-        team = getattr(request.user, 'supervised_team', None)
+        team = Team.objects.filter(supervisor=request.user).first()
         if not team:
             return Response({'error': 'Primero crea tu equipo'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -128,6 +128,41 @@ class JoinTeamView(APIView):
             'team': TeamSerializer(invitation.team).data,
             'message': f'Te uniste al equipo "{invitation.team.name}".',
         })
+
+class AvailableTeamMembersView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSupervisorRole]
+
+    def get(self, request):
+        members = User.objects.filter(
+            role='participant', is_superuser=False, is_approved=True, is_active=True, team__isnull=True
+        ).order_by('name', 'username')
+        return Response(UserSerializer(members, many=True).data)
+
+
+class AddTeamMemberView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSupervisorRole]
+
+    def post(self, request):
+        team = Team.objects.filter(supervisor=request.user).first()
+        if not team:
+            return Response({'error': 'Primero crea tu equipo'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=request.data.get('user_id'))
+        except (User.DoesNotExist, TypeError, ValueError):
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.role != 'participant' or user.is_superuser:
+            return Response({'error': 'Solo se pueden añadir participantes'}, status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_approved or not user.is_active:
+            return Response({'error': 'El participante debe estar aprobado'}, status=status.HTTP_400_BAD_REQUEST)
+        if user.team_id:
+            return Response({'error': 'Este participante ya pertenece a un equipo'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.team = team
+        user.save(update_fields=['team'])
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()

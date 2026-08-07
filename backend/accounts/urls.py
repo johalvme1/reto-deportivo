@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, LoginView, ProfileView, PendingUsersView, ReviewUserView, PasswordResetRequestView, PasswordResetConfirmView, UsersListView, DeleteUserView, MyTeamView, CreateTeamView, RenameTeamView, CreateInvitationView, JoinTeamView
+from .views import RegisterView, LoginView, ProfileView, PendingUsersView, ReviewUserView, PasswordResetRequestView, PasswordResetConfirmView, UsersListView, DeleteUserView, MyTeamView, CreateTeamView, RenameTeamView, CreateInvitationView, JoinTeamView, AvailableTeamMembersView, AddTeamMemberView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -16,4 +16,6 @@ urlpatterns = [
     path('teams/rename/', RenameTeamView.as_view(), name='rename-team'),
     path('teams/invite/', CreateInvitationView.as_view(), name='create-invitation'),
     path('teams/join/', JoinTeamView.as_view(), name='join-team'),
+    path('teams/available-members/', AvailableTeamMembersView.as_view(), name='available-members'),
+    path('teams/add-member/', AddTeamMemberView.as_view(), name='add-member'),
 ]

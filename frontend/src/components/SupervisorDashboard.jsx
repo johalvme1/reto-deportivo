@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSupervisorDashboard, requestPasswordReset, createTeam, renameTeam, generateInvite } from '../api';
+import { getSupervisorDashboard, requestPasswordReset, createTeam, renameTeam, generateInvite, getAvailableMembers, addTeamMember } from '../api';
 import { useAuth } from '../context/AuthContext';
 
 const tableStyle = {
@@ -101,6 +101,9 @@ export default function SupervisorDashboard() {
   const [savingTeam, setSavingTeam] = useState(false);
   const [invite, setInvite] = useState(null);
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [availableMembers, setAvailableMembers] = useState([]);
+  const [memberMsg, setMemberMsg] = useState('');
+  const [busyMemberId, setBusyMemberId] = useState(null);
 
   const isSupervisorRole = user?.role === 'supervisor';
 
@@ -169,8 +172,24 @@ export default function SupervisorDashboard() {
     }
   };
 
+  const loadAvailableMembers = async () => {
+    try { setAvailableMembers(await getAvailableMembers()); } catch {}
+  };
+
+  const handleAddMember = async (m) => {
+    setBusyMemberId(m.id); setMemberMsg('');
+    try {
+      await addTeamMember(m.id);
+      setMemberMsg(`✅ ${m.name} se unió a tu equipo. Ya puede participar sin necesidad de código de invitación.`);
+      await refreshUser();
+      loadAvailableMembers();
+    } catch (err) { setMemberMsg(err.message); }
+    finally { setBusyMemberId(null); }
+  };
+
   useEffect(() => {
     getSupervisorDashboard().then(setData).catch(e => setError(e.message));
+    loadAvailableMembers();
   }, []);
 
   if (error) return <p style={{ color: '#ef476f' }}>{error}</p>;
@@ -243,6 +262,29 @@ export default function SupervisorDashboard() {
                 <button className="btn btn-warning btn-sm" onClick={handleRenameTeam} disabled={savingTeam || !teamInput.trim() || teamInput.trim() === teamName}>Renombrar</button>
               ) : (
                 <button className="btn btn-success btn-sm" onClick={handleCreateTeam} disabled={savingTeam || !teamInput.trim()}>Crear equipo</button>
+              )}
+            </div>
+          )}
+          {isSupervisorRole && teamName && (
+            <div style={{ marginTop: 14, borderTop: '1px solid #f1e0f5', paddingTop: 12 }}>
+              <strong style={{ color: '#6b4a70', fontSize: '0.9rem' }}>👥 Añadir participantes que ya están en la aplicación</strong>
+              <p style={{ color: '#b088c0', fontSize: '0.82rem', margin: '6px 0 8px' }}>
+                Los usuarios registrados que aún no tienen equipo no necesitan código de invitación: agrégalos aquí directamente.
+              </p>
+              {memberMsg && <div style={{ margin: '8px 0', fontSize: '0.85rem', color: memberMsg.startsWith('✅') ? '#0d5c43' : '#ef476f' }}>{memberMsg}</div>}
+              {availableMembers.length === 0 ? (
+                <p style={{ color: '#8a5f96', fontSize: '0.82rem' }}>No hay participantes registrados sin equipo por el momento.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {availableMembers.map(m => (
+                    <li key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '7px 0', borderBottom: '1px solid #f5eafa' }}>
+                      <span style={{ fontSize: '0.9rem', color: '#6b4a70' }}>{m.name || m.username}{m.email && <span style={{ color: '#b088c0', fontSize: '0.8rem' }}> · {m.email}</span>}</span>
+                      <button className="btn btn-primary btn-sm" onClick={() => handleAddMember(m)} disabled={busyMemberId === m.id}>
+                        {busyMemberId === m.id ? 'Añadiendo...' : 'Añadir'}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           )}

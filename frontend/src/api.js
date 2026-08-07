@@ -126,6 +126,17 @@ export function getMyTeam() {
   return request('/auth/teams/me/');
 }
 
+export function getAvailableMembers() {
+  return request('/auth/teams/available-members/');
+}
+
+export function addTeamMember(userId) {
+  return request('/auth/teams/add-member/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId })
+  });
+}
+
 export function createTeam(name) {
   return request('/auth/teams/create/', {
     method: 'POST',

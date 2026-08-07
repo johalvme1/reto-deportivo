@@ -11,7 +11,7 @@ from challenges.models import ChallengeSubmission
 from django.contrib.auth import get_user_model
 
 
-def require_team(user, message='Únete a un equipo con un código de invitación antes de registrar puntos'):
+def require_team(user, message='Tu supervisor debe añadirte a un equipo antes de registrar puntos'):
     if user.role == 'participant' and not user.team_id:
         return message
     return None
