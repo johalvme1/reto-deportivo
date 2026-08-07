@@ -109,7 +109,7 @@ class DeleteUserView(APIView):
             return Response({'error': 'No se puede eliminar un superusuario'}, status=status.HTTP_400_BAD_REQUEST)
         if user.role == 'supervisor':
             return Response({'error': 'No se puede eliminar otro supervisor'}, status=status.HTTP_400_BAD_REQUEST)
-        if user.activities.exists():
+        if user.activity_set.exists():
             return Response({'error': 'No se puede eliminar a este usuario porque creó actividades'}, status=status.HTTP_400_BAD_REQUEST)
 
         user.delete()
