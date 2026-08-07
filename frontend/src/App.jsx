@@ -1,10 +1,9 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Register from './components/Register';
 import ResetPassword from './components/ResetPassword';
-import JoinTeam from './components/JoinTeam';
 import Dashboard from './components/Dashboard';
 import Navbar from './components/Navbar';
 import AdminPanel from './components/AdminPanel';
@@ -14,14 +13,8 @@ import Chat from './components/Chat';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  const location = useLocation();
   if (loading) return <div className="loading">Cargando...</div>;
-  if (!user) {
-    const tok = new URLSearchParams(location.search).get('token');
-    if (tok) sessionStorage.setItem('pendingInviteToken', tok);
-    return <Navigate to="/login" />;
-  }
-  return children;
+  return user ? children : <Navigate to="/login" />;
 }
 
 function AppRoutes() {
@@ -37,7 +30,6 @@ function AppRoutes() {
           <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
           <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/join-team" element={<ProtectedRoute><JoinTeam /></ProtectedRoute>} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />

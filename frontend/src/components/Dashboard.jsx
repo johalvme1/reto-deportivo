@@ -162,21 +162,6 @@ export default function Dashboard() {
 
   const dp = data?.dailyPoint;
 
-  if (user.role === 'participant' && !user.team_id) {
-    return (
-      <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-        <div style={{ fontSize: '2.4rem' }}>👥</div>
-        <h1>Tu equipo aún no te ha asignado</h1>
-        <p style={{ color: '#b088c0', maxWidth: 460, margin: '0 auto' }}>
-          Ya estás registrado, no necesitas un código de invitación. Tu supervisor te añadirá a su equipo y podrás participar de inmediato. Pídele que te agregue desde su dashboard.
-        </p>
-        <div style={{ marginTop: 14 }}>
-          <Link to="/join-team" className="btn btn-primary">Si te dieron un enlace, pégalo aquí</Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="card">

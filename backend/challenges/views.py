@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from datetime import timedelta
 from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion, EvidenceLike
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
-from accounts.permissions import is_supervisor_user, can_access_team, team_member_qs
+from accounts.permissions import is_supervisor_user
 from points.models import DailyPoint
 from chat.models import ChatMessage
 
@@ -30,11 +30,6 @@ class ChallengeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        if not self.request.user.is_superuser:
-            if self.request.user.team_id:
-                qs = qs.filter(team=self.request.user.team)
-            else:
-                qs = qs.none()
         active = self.request.query_params.get('active')
         if active == 'true':
             qs = qs.filter(active=True)
@@ -46,7 +41,7 @@ class ChallengeViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, team=self.request.user.team)
+        serializer.save(created_by=self.request.user)
 
     def perform_destroy(self, instance):
         raise PermissionDenied('Eliminar retos solo se permite desde el panel de administración de Django (/admin/)')
@@ -59,11 +54,6 @@ class SubmitEvidenceView(APIView):
             challenge = Challenge.objects.get(id=challenge_id)
         except Challenge.DoesNotExist:
             return Response({'error': 'Reto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not can_access_team(request.user, challenge.team):
-            return Response({'error': 'Este reto no pertenece a tu equipo'}, status=status.HTTP_403_FORBIDDEN)
-        if request.user.role == 'participant' and not request.user.team_id:
-            return Response({'error': 'Únete a un equipo con un código de invitación antes de participar'}, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
 
@@ -105,9 +95,6 @@ class ReviewSubmissionView(APIView):
             submission = ChallengeSubmission.objects.get(id=submission_id)
         except ChallengeSubmission.DoesNotExist:
             return Response({'error': 'Evidencia no encontrada'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not can_access_team(request.user, submission.challenge.team):
-            return Response({'error': 'Este reto no pertenece a tu equipo'}, status=status.HTTP_403_FORBIDDEN)
 
         decision = request.data.get('status')
         if decision not in ['approved', 'rejected', 'returned']:
@@ -168,9 +155,6 @@ class ApproveUserView(APIView):
         except (Challenge.DoesNotExist, User.DoesNotExist):
             return Response({'error': 'No encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not can_access_team(request.user, challenge.team):
-            return Response({'error': 'Este reto no pertenece a tu equipo'}, status=status.HTTP_403_FORBIDDEN)
-
         if challenge.submissions.filter(user=target, status='approved').exists():
             return Response({'error': 'Este participante ya completó el reto'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -203,9 +187,6 @@ class CompleteChallengeView(APIView):
         except Challenge.DoesNotExist:
             return Response({'error': 'Reto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not can_access_team(request.user, challenge.team):
-            return Response({'error': 'Este reto no pertenece a tu equipo'}, status=status.HTTP_403_FORBIDDEN)
-
         if challenge.submissions.filter(user=request.user, status='approved').exists():
             return Response({'error': 'Ya completaste este reto'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -218,7 +199,6 @@ class CompleteChallengeView(APIView):
         if completion.status != 'requested':
             ChatMessage.objects.create(
                 user=request.user,
-                team=request.user.team,
                 text=f'🏅 {request.user.name or request.user.username} marcó su reto "{challenge.title}" como completado',
             )
         completion.message = str(message).strip()
@@ -237,8 +217,6 @@ class PendingCompletionsView(APIView):
             .select_related('user', 'challenge')
             .order_by('-requested_at')
         )
-        if not request.user.is_superuser:
-            completions = completions.filter(challenge__team=request.user.team)
         return Response([{
             'user': c.user_id,
             'user_name': c.user.name or c.user.username,
@@ -262,8 +240,6 @@ class MedalsView(APIView):
         medals = Medal.objects.select_related('user', 'challenge')
         if request.query_params.get('mine') == 'true':
             medals = medals.filter(user=request.user)
-        elif not request.user.is_superuser:
-            medals = medals.filter(user__team=request.user.team)
         return Response(MedalSerializer(medals, many=True).data)
 
 class SupervisorDashboardView(APIView):
@@ -272,15 +248,12 @@ class SupervisorDashboardView(APIView):
     def get(self, request):
         today = timezone.localdate()
 
-        members = team_member_qs(request.user)
-        member_ids = list(members.values_list('id', flat=True))
-
         weeks = []
         for offset in range(7, -1, -1):
             monday = today - timedelta(days=today.weekday() + offset * 7)
             sunday = monday + timedelta(days=7)
-            medals = Medal.objects.filter(awarded_at__date__gte=monday, awarded_at__date__lt=sunday, user_id__in=member_ids)
-            daily = DailyPoint.objects.filter(date__gte=monday, date__lt=sunday, user_id__in=member_ids)
+            medals = Medal.objects.filter(awarded_at__date__gte=monday, awarded_at__date__lt=sunday)
+            daily = DailyPoint.objects.filter(date__gte=monday, date__lt=sunday)
             challenge_points = sum(m.challenge.points for m in medals)
             daily_points = sum(dp.points for dp in daily)
             weeks.append({
@@ -300,7 +273,7 @@ class SupervisorDashboardView(APIView):
             sunday = monday + timedelta(days=7)
             week_bounds.append((monday, sunday))
 
-        for u in members.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
+        for u in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
             medals = Medal.objects.filter(user=u)
             daily = DailyPoint.objects.filter(user=u)
             challenge_points = sum(m.challenge.points for m in medals)
@@ -379,13 +352,8 @@ class EvidenceGalleryView(APIView):
 
         items = []
 
-        team_filter = {}
-        if not request.user.is_superuser:
-            team_filter = {'user__team': request.user.team}
-
         subs = (
             ChallengeSubmission.objects
-            .filter(**team_filter)
             .exclude(user__is_superuser=True)
             .select_related('user', 'challenge')
             .order_by('-created_at')[:300]
@@ -407,7 +375,6 @@ class EvidenceGalleryView(APIView):
 
         dps = (
             DailyPoint.objects
-            .filter(**team_filter)
             .exclude(user__is_superuser=True)
             .filter(Q(image__isnull=False) & ~Q(image='') | Q(video__isnull=False) & ~Q(video='') | Q(steps_image__isnull=False) & ~Q(steps_image=''))
             .select_related('user')
@@ -485,9 +452,6 @@ class ChallengeSubmissionsView(APIView):
             challenge = Challenge.objects.get(id=challenge_id)
         except Challenge.DoesNotExist:
             return Response({'error': 'Reto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not can_access_team(request.user, challenge.team):
-            return Response({'error': 'Este reto no pertenece a tu equipo'}, status=status.HTTP_403_FORBIDDEN)
 
         is_supervisor = is_supervisor_user(request.user)
 

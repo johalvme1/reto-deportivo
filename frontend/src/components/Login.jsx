@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { login } from '../api';
 
 export default function Login() {
   const { loginUser } = useAuth();
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,11 +17,6 @@ export default function Login() {
     try {
       const data = await login(email, password);
       loginUser(data.token, data.user);
-      const pending = sessionStorage.getItem('pendingInviteToken');
-      if (pending) {
-        sessionStorage.removeItem('pendingInviteToken');
-        navigate(`/join-team?token=${encodeURIComponent(pending)}`, { replace: true });
-      }
     } catch (err) {
       setError(err.message);
     } finally {

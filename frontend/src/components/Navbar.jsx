@@ -5,13 +5,12 @@ import { useAuth } from '../context/AuthContext';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const teamName = user?.team_name || user?.supervised_team_name;
 
   return (
     <nav className="navbar">
       <Link to="/" className="navbar-brand">
         <img src="/static/divinas.jpeg" alt="Logo" className="navbar-logo" />
-        Reto Deportivo{teamName ? <span style={{ fontWeight: 400, opacity: 0.9 }}> - {teamName}</span> : null}
+        Reto Deportivo
       </Link>
       <div className="navbar-links">
         <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Inicio</Link>

@@ -12,7 +12,6 @@ const EMOJIS = [
 
 export default function Chat() {
   const { user } = useAuth();
-  const teamName = user?.team_name || user?.supervised_team_name;
   const [messages, setMessages] = useState([]);
   const [lastReadId, setLastReadId] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -98,7 +97,7 @@ export default function Chat() {
 
   return (
     <div className="card">
-      <h1>Chat del Reto{teamName ? ` - ${teamName}` : ''}</h1>
+      <h1>Chat del Reto</h1>
       {error && <div className="alert alert-error">{error}</div>}
       <div className="chat-box" ref={listRef}>
         {messages.length === 0 && (

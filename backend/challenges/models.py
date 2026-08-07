@@ -11,7 +11,6 @@ class Challenge(models.Model):
     end_date = models.DateTimeField(null=True, blank=True, help_text='Fecha y hora límite del reto')
     active = models.BooleanField(default=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    team = models.ForeignKey('accounts.Team', on_delete=models.CASCADE, null=True, blank=True, related_name='challenges')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
