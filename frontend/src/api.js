@@ -122,6 +122,38 @@ export function confirmPasswordReset(userId, token, password) {
   });
 }
 
+export function getMyTeam() {
+  return request('/auth/teams/me/');
+}
+
+export function createTeam(name) {
+  return request('/auth/teams/create/', {
+    method: 'POST',
+    body: JSON.stringify({ name })
+  });
+}
+
+export function renameTeam(name) {
+  return request('/auth/teams/rename/', {
+    method: 'POST',
+    body: JSON.stringify({ name })
+  });
+}
+
+export function generateInvite() {
+  return request('/auth/teams/invite/', {
+    method: 'POST',
+    body: JSON.stringify({})
+  });
+}
+
+export function joinTeam(token) {
+  return request('/auth/teams/join/', {
+    method: 'POST',
+    body: JSON.stringify({ token })
+  });
+}
+
 export function updateProfile(data) {
   return request('/auth/profile/', {
     method: 'PUT',

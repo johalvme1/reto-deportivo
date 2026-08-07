@@ -162,6 +162,21 @@ export default function Dashboard() {
 
   const dp = data?.dailyPoint;
 
+  if (user.role === 'participant' && !user.team_id) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: 32 }}>
+        <div style={{ fontSize: '2.4rem' }}>🔗</div>
+        <h1>Únete a tu equipo</h1>
+        <p style={{ color: '#b088c0', maxWidth: 420, margin: '0 auto' }}>
+          Tu supervisor compartirá contigo un enlace o código de invitación. Ábrelo (o pégalo aquí abajo) para empezar a participar en el reto de tu equipo.
+        </p>
+        <div style={{ marginTop: 14 }}>
+          <Link to="/join-team" className="btn btn-primary">Tengo un código de invitación</Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="card">

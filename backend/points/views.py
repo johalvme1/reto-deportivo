@@ -10,6 +10,12 @@ from activities.models import Activity
 from challenges.models import ChallengeSubmission
 from django.contrib.auth import get_user_model
 
+
+def require_team(user, message='Únete a un equipo con un código de invitación antes de registrar puntos'):
+    if user.role == 'participant' and not user.team_id:
+        return message
+    return None
+
 class TodayPointsView(APIView):
     def get(self, request):
         today = date.today()
@@ -37,6 +43,10 @@ class ImageUploadView(APIView):
         video = request.FILES.get('video')
         if not image and not video:
             return Response({'error': 'Debes subir una foto o un video como evidencia'}, status=status.HTTP_400_BAD_REQUEST)
+
+        team_error = require_team(request.user)
+        if team_error:
+            return Response({'error': team_error}, status=status.HTTP_400_BAD_REQUEST)
 
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
@@ -68,6 +78,10 @@ class StepsSubmitView(APIView):
         if steps < 0:
             return Response({'error': 'La cantidad de pasos no puede ser negativa'}, status=status.HTTP_400_BAD_REQUEST)
 
+        team_error = require_team(request.user)
+        if team_error:
+            return Response({'error': team_error}, status=status.HTTP_400_BAD_REQUEST)
+
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
@@ -90,6 +104,10 @@ class ActivitySubmitView(APIView):
         except Activity.DoesNotExist:
             return Response({'error': 'Actividad no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
+        team_error = require_team(request.user)
+        if team_error:
+            return Response({'error': team_error}, status=status.HTTP_400_BAD_REQUEST)
+
         today = date.today()
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
 
@@ -111,6 +129,10 @@ class LeaderboardView(APIView):
     def get(self, request):
         from django.db.models import Count, Q, Sum, Case, When, Value, DecimalField, Max, F
         User = get_user_model()
+
+        user_qs = User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True)
+        if request.user.is_authenticated and not request.user.is_superuser:
+            user_qs = user_qs.filter(team=request.user.team)
 
         daily_agg = DailyPoint.objects.values('user').annotate(
             image_count=Count('pk', filter=Q(image__isnull=False) & ~Q(image='') | Q(video__isnull=False) & ~Q(video='')),
@@ -137,7 +159,7 @@ class LeaderboardView(APIView):
             extra_map[entry['user']] = extra_map.get(entry['user'], 0) + entry['challenge_pts']
 
         leaderboard = []
-        for user in User.objects.filter(role='participant', is_superuser=False, is_approved=True, is_active=True):
+        for user in user_qs:
             d = daily_map.get(user.id, {})
             total = float(d.get('image_count', 0) or 0) + float(d.get('steps_points', 0) or 0) + float(d.get('activity_count', 0) or 0) + float(extra_map.get(user.id, 0) or 0) + float(user.bonus_points or 0)
             leaderboard.append({

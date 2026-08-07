@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getSupervisorDashboard, requestPasswordReset } from '../api';
+import { getSupervisorDashboard, requestPasswordReset, createTeam, renameTeam, generateInvite } from '../api';
+import { useAuth } from '../context/AuthContext';
 
 const tableStyle = {
   width: '100%',
@@ -88,11 +89,67 @@ function StepsLinesChart({ participants }) {
 }
 
 export default function SupervisorDashboard() {
+  const { user, refreshUser } = useAuth();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [userFilter, setUserFilter] = useState('all');
   const [reset, setReset] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [teamName, setTeamName] = useState(user?.supervised_team_name || user?.team_name || '');
+  const [teamInput, setTeamInput] = useState('');
+  const [teamMsg, setTeamMsg] = useState('');
+  const [savingTeam, setSavingTeam] = useState(false);
+  const [invite, setInvite] = useState(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
+  const isSupervisorRole = user?.role === 'supervisor';
+
+  const handleCreateTeam = async (e) => {
+    e.preventDefault();
+    if (!teamInput.trim()) return;
+    setSavingTeam(true); setTeamMsg('');
+    try {
+      const team = await createTeam(teamInput.trim());
+      setTeamName(team.name);
+      setTeamInput('');
+      await refreshUser();
+      setTeamMsg('✅ Equipo creado. Ahora puedes generar invitaciones.');
+    } catch (err) { setTeamMsg(err.message); }
+    finally { setSavingTeam(false); }
+  };
+
+  const handleRenameTeam = async () => {
+    const name = teamInput.trim();
+    if (!name || name === teamName) return;
+    setSavingTeam(true); setTeamMsg('');
+    try {
+      const team = await renameTeam(name);
+      setTeamName(team.name);
+      setTeamInput('');
+      await refreshUser();
+      setTeamMsg('✅ Nombre del equipo actualizado.');
+    } catch (err) { setTeamMsg(err.message); }
+    finally { setSavingTeam(false); }
+  };
+
+  const handleInvite = async () => {
+    setInviteCopied(false);
+    setTeamMsg('');
+    try {
+      const res = await generateInvite();
+      setInvite(res.url);
+    } catch (err) { setTeamMsg(err.message); }
+  };
+
+  const copyInvite = async () => {
+    if (!invite) return;
+    try {
+      await navigator.clipboard.writeText(invite);
+      setInviteCopied(true);
+    } catch {
+      prompt('Copia el enlace de invitación:', invite);
+    }
+  };
 
   const handleReset = async (p) => {
     setCopied(false);
@@ -145,6 +202,52 @@ export default function SupervisorDashboard() {
       <p style={{ color: '#b088c0', fontSize: '0.85rem', marginBottom: 12 }}>
         Resumen semanal de retos completados y puntos (actividades diarias + retos) y totales por participante.
       </p>
+
+      {isSupervisorRole && (
+        <div style={{ border: '1px solid #f1e0f5', borderRadius: 10, padding: 14, marginBottom: 16, background: '#fdfaff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <strong style={{ color: '#6b4a70' }}>🏆 Equipo:</strong>
+            {teamName ? (
+              <span style={{ fontSize: '1.05rem', fontWeight: 700, color: '#d9629f' }}>{teamName}</span>
+            ) : (
+              <span style={{ color: '#b088c0', fontSize: '0.85rem' }}>Aún no has creado tu equipo. Crea uno para poder gestionar retos y participantes.</span>
+            )}
+            {teamName && (
+              <button className="btn btn-primary btn-sm" onClick={handleInvite}>🔗 Generar invitación</button>
+            )}
+          </div>
+          {teamMsg && <div style={{ marginTop: 8, fontSize: '0.85rem', color: teamMsg.startsWith('✅') ? '#0d5c43' : '#ef476f' }}>{teamMsg}</div>}
+          {invite && (
+            <div style={{ border: '1px solid #f0d48a', background: '#fff3cd', borderRadius: 10, padding: 12, marginTop: 12 }}>
+              <strong>🔗 Enlace de invitación</strong>
+              <p style={{ fontSize: '0.82rem', color: '#8a6d1a', margin: '6px 0' }}>
+                Comparte este enlace con las personas que quieras añadir a tu equipo. Cada enlace solo sirve para una persona; genera uno nuevo cuando lo necesites.
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input readOnly value={invite} style={{ flex: 1, minWidth: 220 }} onClick={e => e.target.select()} />
+                <button className="btn btn-primary btn-sm" onClick={copyInvite}>{inviteCopied ? '✅ Copiado' : 'Copiar enlace'}</button>
+                <button className="btn btn-sm" onClick={() => setInvite(null)}>Cerrar</button>
+              </div>
+            </div>
+          )}
+          {isSupervisorRole && (
+            <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                value={teamInput}
+                onChange={e => setTeamInput(e.target.value)}
+                placeholder={teamName ? 'Nuevo nombre del equipo...' : 'Nombre de tu equipo (ej: Divinas Challenge)'}
+                style={{ flex: 1, minWidth: 200 }}
+                onKeyDown={e => { if (e.key === 'Enter') { teamName ? handleRenameTeam() : handleCreateTeam(e); } }}
+              />
+              {teamName ? (
+                <button className="btn btn-warning btn-sm" onClick={handleRenameTeam} disabled={savingTeam || !teamInput.trim() || teamInput.trim() === teamName}>Renombrar</button>
+              ) : (
+                <button className="btn btn-success btn-sm" onClick={handleCreateTeam} disabled={savingTeam || !teamInput.trim()}>Crear equipo</button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
         <label style={{ fontSize: '0.85rem', color: '#8a5f96', fontWeight: 600 }}>Ver participante:</label>

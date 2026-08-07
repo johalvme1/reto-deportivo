@@ -231,6 +231,7 @@ function ChallengeManager() {
               <strong>{c.title}</strong>
               <span className="badge" style={{ marginLeft: 8 }}>{c.points} pts</span>
               {c.video && <span className="badge" style={{ marginLeft: 8, background: '#e0f0ff', color: '#1a5f8a' }}>🎬 Video explicativo</span>}
+              {c.team_name && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>🏆 {c.team_name}</span>}
               {c.active ? <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Activo</span> : <span className="badge badge-participant" style={{ marginLeft: 8 }}>Inactivo</span>}
               {c.start_date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>▶ Inicia: {new Date(c.start_date).toLocaleString('es')}</span>}
               {c.end_date && <span className="badge" style={{ marginLeft: 8, background: '#f0e3f2', color: '#7a5a86' }}>⏱ Termina: {new Date(c.end_date).toLocaleString('es')}</span>}
@@ -343,6 +344,7 @@ function ChallengeManager() {
                   <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Usuario</th>
                   <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Email</th>
                   <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Rol</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Equipo</th>
                   <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}></th>
                 </tr>
               </thead>
@@ -355,6 +357,7 @@ function ChallengeManager() {
                     </td>
                     <td style={{ padding: '8px 10px' }}>{u.email}</td>
                     <td style={{ padding: '8px 10px' }}>{u.role === 'supervisor' ? 'Supervisor' : 'Participante'}</td>
+                    <td style={{ padding: '8px 10px' }}>{u.team_name || (u.supervised_team_name && `🏆 ${u.supervised_team_name}`) || <span style={{ color: '#c9a8d4' }}>—</span>}</td>
                     <td style={{ padding: '8px 10px', textAlign: 'right' }}>
                       <button className="btn btn-warning btn-sm" onClick={() => handleResetPassword(u)}>🔑 Restablecer contraseña</button>
                       {u.id !== user.id && (
@@ -364,7 +367,7 @@ function ChallengeManager() {
                   </tr>
                 ))}
                 {users.length === 0 && (
-                  <tr><td colSpan="4" style={{ padding: '8px 10px' }}>Sin usuarios</td></tr>
+                  <tr><td colSpan="5" style={{ padding: '8px 10px' }}>Sin usuarios</td></tr>
                 )}
               </tbody>
             </table>

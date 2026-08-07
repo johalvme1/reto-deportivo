@@ -1,6 +1,7 @@
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
 from .models import ChatMessage, ChatReadState
 from .serializers import ChatMessageSerializer
 
@@ -10,21 +11,29 @@ def get_read_state(user):
     return state
 
 
-def unread_count_for(state):
-    return ChatMessage.objects.filter(id__gt=state.last_read_id).count()
+def team_messages_qs(user):
+    if user.is_superuser:
+        return ChatMessage.objects.all()
+    if user.team_id:
+        return ChatMessage.objects.filter(Q(team=user.team) | Q(team__isnull=True))
+    return ChatMessage.objects.filter(team__isnull=True)
+
+
+def unread_count_for(state, user):
+    return team_messages_qs(user).filter(id__gt=state.last_read_id).count()
 
 
 class ChatView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        qs = ChatMessage.objects.select_related('user').order_by('-created_at')[:100]
+        qs = team_messages_qs(request.user).select_related('user').order_by('-created_at')[:100]
         messages = list(reversed(qs))
         state = get_read_state(request.user)
         return Response({
             'messages': ChatMessageSerializer(messages, many=True).data,
             'last_read_id': state.last_read_id,
-            'unread_count': unread_count_for(state),
+            'unread_count': unread_count_for(state, request.user),
         })
 
     def post(self, request):
@@ -32,7 +41,12 @@ class ChatView(APIView):
         if not isinstance(text, str) or not text.strip():
             return Response({'error': 'El mensaje no puede estar vacío'}, status=status.HTTP_400_BAD_REQUEST)
         text = text.strip()[:1000]
-        message = ChatMessage.objects.create(user=request.user, text=text)
+
+        team = None if request.user.is_superuser else request.user.team
+        if team is None and not request.user.is_superuser:
+            return Response({'error': 'Únete a un equipo para participar en el chat'}, status=status.HTTP_400_BAD_REQUEST)
+
+        message = ChatMessage.objects.create(user=request.user, text=text, team=team)
 
         state = get_read_state(request.user)
         if message.id > state.last_read_id:
@@ -56,7 +70,7 @@ class ChatReadView(APIView):
         if last_read_id > state.last_read_id:
             state.last_read_id = last_read_id
             state.save()
-        return Response({'unread_count': unread_count_for(state)})
+        return Response({'unread_count': unread_count_for(state, request.user)})
 
 
 class ChatUnreadView(APIView):
@@ -64,4 +78,4 @@ class ChatUnreadView(APIView):
 
     def get(self, request):
         state = get_read_state(request.user)
-        return Response({'unread_count': unread_count_for(state)})
+        return Response({'unread_count': unread_count_for(state, request.user)})
