@@ -12,6 +12,7 @@ function authHeaders() {
 async function request(url, options = {}) {
   const res = await fetch(`${API}${url}`, {
     ...options,
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders(),
