@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
+import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions, getUsers, deleteUser } from '../api';
+import { useAuth } from '../context/AuthContext';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
 import DonutProgress from './DonutProgress';
 
 function ChallengeManager() {
+  const { user } = useAuth();
   const [challenges, setChallenges] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -21,6 +23,7 @@ function ChallengeManager() {
   const [pendingCompletions, setPendingCompletions] = useState([]);
   const [reviews, setReviews] = useState({});
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [users, setUsers] = useState([]);
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(null);
 
@@ -44,6 +47,20 @@ function ChallengeManager() {
     try { setPendingUsers(await getPendingUsers()); } catch {}
   };
   useEffect(() => { loadPending(); }, []);
+
+  const loadUsers = async () => {
+    try { setUsers(await getUsers()); } catch {}
+  };
+  useEffect(() => { if (user.is_superuser) loadUsers(); }, [user]);
+
+  const handleDeleteUser = async (u) => {
+    if (!confirm(`¿Eliminar a ${u.name || u.username}? Se borrarán también sus puntos, evidencias y registros.`)) return;
+    try {
+      await deleteUser(u.id);
+      alert('Usuario eliminado');
+      loadUsers();
+    } catch (err) { alert(err.message); }
+  };
 
   const handleApprove = async (id) => {
     try {
@@ -293,6 +310,46 @@ function ChallengeManager() {
           </div>
         ))}
       </div>
+      {user.is_superuser && (
+        <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #f1e0f5' }}>
+          <h2>Usuarios registrados</h2>
+          <p style={{ color: '#b088c0', fontSize: '0.85rem', marginBottom: 12 }}>
+            Solo el administrador puede eliminar usuarios. Se borran también sus puntos, evidencias y registros.
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Usuario</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Email</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Rol</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid #f5eafa' }}>
+                    <td style={{ padding: '8px 10px' }}>
+                      <strong>{u.name || u.username}</strong>{u.username !== (u.name || u.username) && <span style={{ color: '#b088c0' }}> · {u.username}</span>}
+                      {u.is_superuser && <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Admin</span>}
+                    </td>
+                    <td style={{ padding: '8px 10px' }}>{u.email}</td>
+                    <td style={{ padding: '8px 10px' }}>{u.role === 'supervisor' ? 'Supervisor' : 'Participante'}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                      {u.id !== user.id && (
+                        <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUser(u)}>Eliminar</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr><td colSpan="4" style={{ padding: '8px 10px' }}>Sin usuarios</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {preview && <Lightbox src={preview.src} kind={preview.kind} onClose={() => setPreview(null)} />}
     </div>
   );

@@ -89,6 +89,17 @@ export function getPendingUsers() {
   return request('/auth/pending-users/');
 }
 
+export function getUsers() {
+  return request('/auth/users/');
+}
+
+export function deleteUser(userId) {
+  return request('/auth/users/delete/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId })
+  });
+}
+
 export function reviewUser(userId, action) {
   return request('/auth/users/review/', {
     method: 'POST',

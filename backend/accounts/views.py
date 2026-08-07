@@ -12,6 +12,10 @@ class IsAdminUser(permissions.BasePermission):
     def has_permission(self, request, view):
         return is_supervisor_user(request.user)
 
+class IsSuperuser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_superuser
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
@@ -81,6 +85,35 @@ class ReviewUserView(APIView):
             return Response({'detail': 'Solicitud eliminada'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Acción inválida'}, status=status.HTTP_400_BAD_REQUEST)
+
+class UsersListView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperuser]
+
+    def get(self, request):
+        users = User.objects.order_by('name', 'username')
+        return Response(UserSerializer(users, many=True).data)
+
+class DeleteUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperuser]
+
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        try:
+            user = User.objects.get(id=user_id)
+        except (User.DoesNotExist, TypeError, ValueError):
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.id == request.user.id:
+            return Response({'error': 'No puedes eliminarte a ti mismo'}, status=status.HTTP_400_BAD_REQUEST)
+        if user.is_superuser:
+            return Response({'error': 'No se puede eliminar un superusuario'}, status=status.HTTP_400_BAD_REQUEST)
+        if user.role == 'supervisor':
+            return Response({'error': 'No se puede eliminar otro supervisor'}, status=status.HTTP_400_BAD_REQUEST)
+        if user.activities.exists():
+            return Response({'error': 'No se puede eliminar a este usuario porque creó actividades'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.delete()
+        return Response({'detail': 'Usuario eliminado'}, status=status.HTTP_200_OK)
 
 class ProfileView(APIView):
     def get(self, request):
