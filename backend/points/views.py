@@ -9,6 +9,7 @@ from .serializers import DailyPointSerializer
 from activities.models import Activity
 from challenges.models import ChallengeSubmission
 from django.contrib.auth import get_user_model
+from uploads.views import claim_pending, resolve_field
 
 class TodayPointsView(APIView):
     def get(self, request):
@@ -33,9 +34,9 @@ class ImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        image = request.FILES.get('image')
-        video = request.FILES.get('video')
-        if not image and not video:
+        image_raw, image_dest = resolve_field(request, 'image')
+        video_raw, video_dest = resolve_field(request, 'video')
+        if not (image_raw or image_dest or video_raw or video_dest):
             return Response({'error': 'Debes subir una foto o un video como evidencia'}, status=status.HTTP_400_BAD_REQUEST)
 
         today = date.today()
@@ -44,10 +45,16 @@ class ImageUploadView(APIView):
         if dp.image or dp.video:
             return Response({'error': 'La evidencia de hoy ya fue registrada y está bloqueada'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if image:
-            dp.image = image
+        if image_raw or image_dest:
+            if image_raw:
+                dp.image = image_raw
+            else:
+                dp.image.name = image_dest
         else:
-            dp.video = video
+            if video_raw:
+                dp.video = video_raw
+            else:
+                dp.video.name = video_dest
         dp.save()
         return Response(DailyPointSerializer(dp).data)
 
@@ -57,7 +64,8 @@ class StepsSubmitView(APIView):
     def post(self, request):
         steps = request.data.get('steps')
         file = request.FILES.get('steps_image')
-        if not file:
+        dest = claim_pending(request.data.get('steps_image_upload_id'))
+        if not file and not dest:
             return Response({'error': 'Debes subir una foto como evidencia de tus pasos'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -75,7 +83,10 @@ class StepsSubmitView(APIView):
             return Response({'error': 'Los pasos de hoy ya fueron registrados y están bloqueados'}, status=status.HTTP_400_BAD_REQUEST)
 
         dp.steps = steps
-        dp.steps_image = file
+        if file:
+            dp.steps_image = file
+        else:
+            dp.steps_image.name = dest
         dp.save()
         return Response(DailyPointSerializer(dp).data)
 

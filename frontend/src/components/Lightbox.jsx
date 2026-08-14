@@ -47,7 +47,7 @@ export default function Lightbox({ src, kind = 'image', onClose }) {
         ✕
       </button>
       {kind === 'video' ? (
-        <video src={src} controls autoPlay style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 10 }} />
+        <video src={src} controls autoPlay muted playsInline style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 10 }} />
       ) : (
         <img src={src} alt="evidencia" onClick={e => e.stopPropagation()} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 10 }} />
       )}

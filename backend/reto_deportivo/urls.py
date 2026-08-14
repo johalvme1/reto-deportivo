@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView
+from .media_stream import stream_media
 
 @require_GET
 def api_root(request):
@@ -27,11 +28,13 @@ api_patterns = [
     path('api/points/', include('points.urls')),
     path('api/challenges/', include('challenges.urls')),
     path('api/chat/', include('chat.urls')),
+    path('api/uploads/', include('uploads.urls')),
 ]
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', api_root),
+    path('stream/<path:path>', stream_media, name='stream-media'),
 ] + api_patterns
 
 if settings.DEBUG:
@@ -39,5 +42,5 @@ if settings.DEBUG:
 
 # Serve React frontend (SPA catch-all for all non-API routes)
 urlpatterns += [
-    re_path(r'^(?!api/|admin/|media/|static/).*', TemplateView.as_view(template_name='index.html')),
+    re_path(r'^(?!api/|admin/|media/|static/|stream/).*', TemplateView.as_view(template_name='index.html')),
 ]

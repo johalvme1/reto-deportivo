@@ -33,6 +33,9 @@ function EvidenceCard({ s, onOpen, likes, onToggleLike }) {
         <video
           src={s.video}
           className="evidence-media evidence-thumb"
+          muted
+          playsInline
+          preload="metadata"
           onClick={() => onOpen({ src: s.video, kind: 'video' })}
         />
       )}

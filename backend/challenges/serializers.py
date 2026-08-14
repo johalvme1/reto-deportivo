@@ -1,10 +1,17 @@
 from rest_framework import serializers
 from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion
+from reto_deportivo.media_stream import media_stream_url
+
+class StreamFileField(serializers.FileField):
+    """FileField whose URL is exposed through the range-capable /stream/ endpoint."""
+    def to_representation(self, value):
+        return media_stream_url(value)
 
 class ChallengeSerializer(serializers.ModelSerializer):
     submissions_count = serializers.SerializerMethodField()
     user_submission = serializers.SerializerMethodField()
     is_active = serializers.SerializerMethodField()
+    video = StreamFileField(required=False, allow_null=True)
 
     class Meta:
         model = Challenge
@@ -39,7 +46,7 @@ class ChallengeSerializer(serializers.ModelSerializer):
                 'points_awarded': s.points_awarded,
                 'review_comment': s.review_comment or '',
                 'image': s.image.url if s.image else None,
-                'video': s.video.url if s.video else None,
+                'video': media_stream_url(s.video),
                 'created_at': s.created_at.isoformat(),
             } for s in subs],
         }
@@ -48,6 +55,7 @@ class ChallengeSubmissionSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.name', read_only=True)
     challenge_title = serializers.CharField(source='challenge.title', read_only=True)
     challenge_points = serializers.IntegerField(source='challenge.points', read_only=True)
+    video = StreamFileField(required=False, allow_null=True)
 
     class Meta:
         model = ChallengeSubmission

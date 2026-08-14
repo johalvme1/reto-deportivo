@@ -67,6 +67,59 @@ function uploadForm(url, formData, onProgress) {
   });
 }
 
+const CHUNK_SIZE = 50 * 1024 * 1024; // 50 MiB por parte (PythonAnywhere limita a ~100 MiB por petición)
+const CHUNK_THRESHOLD = 25 * 1024 * 1024;
+
+function appendExtra(formData, entries) {
+  entries.forEach(([k, v]) => {
+    if (v !== null && v !== undefined && v !== '') formData.append(k, v);
+  });
+}
+
+function uploadWithField(url, file, field, onProgress, extra = []) {
+  if (file.size <= CHUNK_THRESHOLD) {
+    const formData = new FormData();
+    appendExtra(formData, extra);
+    formData.append(field, file);
+    return uploadForm(url, formData, onProgress);
+  }
+  return chunkedUpload(url, file, field, onProgress, extra);
+}
+
+async function chunkedUpload(url, file, field, onProgress, extra) {
+  const total = file.size;
+  const totalParts = Math.ceil(total / CHUNK_SIZE);
+  const init = await request('/uploads/', {
+    method: 'POST',
+    body: JSON.stringify({ filename: file.name, size: total, total_parts: totalParts })
+  });
+  const uploadId = init.upload_id;
+
+  for (let i = 0; i < totalParts; i++) {
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, total);
+    const part = file.slice(start, end);
+    const formData = new FormData();
+    formData.append('index', String(i));
+    formData.append('offset', String(start));
+    formData.append('part', part, file.name);
+    await uploadForm(`/uploads/${uploadId}/parts/`, formData, (p) => {
+      if (onProgress) {
+        const loaded = start + p.loaded;
+        onProgress({ loaded, total, percent: Math.round((loaded / total) * 100) });
+      }
+    });
+  }
+
+  await request(`/uploads/${uploadId}/complete/`, { method: 'POST' });
+  if (onProgress) onProgress({ loaded: total, total, percent: 100 });
+
+  const formData = new FormData();
+  appendExtra(formData, extra);
+  formData.append(`${field}_upload_id`, uploadId);
+  return uploadForm(url, formData, onProgress);
+}
+
 export function login(email, password) {
   return request('/auth/login/', {
     method: 'POST',
@@ -165,16 +218,11 @@ export function getLeaderboard() {
 }
 
 export function uploadDailyEvidence(file, kind, onProgress) {
-  const formData = new FormData();
-  formData.append(kind, file);
-  return uploadForm('/points/image/', formData, onProgress);
+  return uploadWithField('/points/image/', file, kind, onProgress);
 }
 
 export function submitSteps(steps, file, onProgress) {
-  const formData = new FormData();
-  formData.append('steps', steps);
-  formData.append('steps_image', file);
-  return uploadForm('/points/steps/', formData, onProgress);
+  return uploadWithField('/points/steps/', file, 'steps_image', onProgress, [['steps', steps]]);
 }
 
 export function submitActivity(activityId) {
@@ -194,13 +242,9 @@ export function getChallenges(active) {
 }
 
 export function createChallenge(data, file, onProgress) {
+  const extra = Object.entries(data).filter(([, v]) => v !== null && v !== undefined && v !== '');
   if (file) {
-    const formData = new FormData();
-    Object.entries(data).forEach(([k, v]) => {
-      if (v !== null && v !== undefined && v !== '') formData.append(k, v);
-    });
-    formData.append('video', file);
-    return uploadForm('/challenges/', formData, onProgress);
+    return uploadWithField('/challenges/', file, 'video', onProgress, extra);
   }
   return request('/challenges/', {
     method: 'POST',
@@ -222,9 +266,7 @@ export function deleteChallenge(id) {
 }
 
 export function submitChallengeEvidence(challengeId, file, kind, onProgress) {
-  const formData = new FormData();
-  formData.append(kind, file);
-  return uploadForm(`/challenges/${challengeId}/submit/`, formData, onProgress);
+  return uploadWithField(`/challenges/${challengeId}/submit/`, file, kind, onProgress);
 }
 
 export function getChallengeSubmissions(challengeId, status) {

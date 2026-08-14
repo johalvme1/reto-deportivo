@@ -12,6 +12,8 @@ from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, Med
 from accounts.permissions import is_supervisor_user
 from points.models import DailyPoint
 from chat.models import ChatMessage
+from reto_deportivo.media_stream import media_stream_url
+from uploads.views import claim_pending, resolve_field
 
 User = get_user_model()
 
@@ -43,6 +45,23 @@ class ChallengeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        video_dest = None
+        if request.data.get('video_upload_id'):
+            video_dest = claim_pending(request.data.get('video_upload_id'))
+            if not video_dest:
+                return Response({'error': 'La subida del video no es válida'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(created_by=self.request.user)
+        if video_dest:
+            instance.video.name = video_dest
+            instance.save(update_fields=['video'])
+        serializer = self.get_serializer(instance)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     def perform_destroy(self, instance):
         raise PermissionDenied('Eliminar retos solo se permite desde el panel de administración de Django (/admin/)')
 
@@ -68,10 +87,10 @@ class SubmitEvidenceView(APIView):
         if challenge.submissions.filter(user=request.user, status='approved').exists():
             return Response({'error': 'Ya completaste este reto con una evidencia aprobada'}, status=status.HTTP_400_BAD_REQUEST)
 
-        image = request.FILES.get('image')
-        video = request.FILES.get('video')
+        image_raw, image_dest = resolve_field(request, 'image')
+        video_raw, video_dest = resolve_field(request, 'video')
 
-        if not image and not video:
+        if not (image_raw or image_dest or video_raw or video_dest):
             return Response({'error': 'Debes subir una foto o un video como evidencia'}, status=status.HTTP_400_BAD_REQUEST)
 
         MAX_SUBMISSIONS = 3
@@ -79,12 +98,18 @@ class SubmitEvidenceView(APIView):
         if active_count >= MAX_SUBMISSIONS:
             return Response({'error': f'Ya subiste las {MAX_SUBMISSIONS} evidencias permitidas para este reto'}, status=status.HTTP_400_BAD_REQUEST)
 
-        submission = ChallengeSubmission.objects.create(
-            challenge=challenge,
-            user=request.user,
-            image=image,
-            video=video,
-        )
+        submission = ChallengeSubmission(challenge=challenge, user=request.user)
+        if image_raw or image_dest:
+            if image_raw:
+                submission.image = image_raw
+            else:
+                submission.image.name = image_dest
+        else:
+            if video_raw:
+                submission.video = video_raw
+            else:
+                submission.video.name = video_dest
+        submission.save()
         return Response(ChallengeSubmissionSerializer(submission).data, status=status.HTTP_201_CREATED)
 
 class ReviewSubmissionView(APIView):
@@ -368,7 +393,7 @@ class EvidenceGalleryView(APIView):
                 'status': s.status,
                 'points': (s.points_awarded or s.challenge.points) if s.status == 'approved' else 0,
                 'image': s.image.url if s.image else None,
-                'video': s.video.url if s.video else None,
+                'video': media_stream_url(s.video),
                 'date': s.created_at.strftime('%Y-%m-%d'),
                 'sort_key': s.created_at.timestamp(),
             })
@@ -407,7 +432,7 @@ class EvidenceGalleryView(APIView):
                     'status': 'approved',
                     'points': 1,
                     'image': None,
-                    'video': d.video.url,
+                    'video': media_stream_url(d.video),
                     'date': d.date.isoformat(),
                     'sort_key': sort_key,
                 })

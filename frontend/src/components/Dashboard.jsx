@@ -327,7 +327,7 @@ export default function Dashboard() {
                     {c.description && <div style={{ fontSize: '0.85rem', color: '#b088c0' }}>{c.description}</div>}
                     {c.video && (
                       <div style={{ marginTop: 8 }}>
-                        <video src={c.video} controls preload="metadata" style={{ width: '100%', maxHeight: 260, borderRadius: 10, background: '#000' }} />
+                        <video src={c.video} controls preload="metadata" playsInline style={{ width: '100%', maxHeight: 260, borderRadius: 10, background: '#000' }} />
                       </div>
                     )}
                     {us && us.submissions.length > 0 && (
