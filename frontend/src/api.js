@@ -12,6 +12,7 @@ function authHeaders() {
 async function request(url, options = {}) {
   const res = await fetch(`${API}${url}`, {
     ...options,
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders(),
@@ -142,10 +143,35 @@ export function getPendingUsers() {
   return request('/auth/pending-users/');
 }
 
+export function getUsers() {
+  return request('/auth/users/');
+}
+
+export function deleteUser(userId) {
+  return request('/auth/users/delete/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId })
+  });
+}
+
 export function reviewUser(userId, action) {
   return request('/auth/users/review/', {
     method: 'POST',
     body: JSON.stringify({ user_id: userId, action })
+  });
+}
+
+export function requestPasswordReset(userId) {
+  return request('/auth/password-reset/request/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId })
+  });
+}
+
+export function confirmPasswordReset(userId, token, password) {
+  return request('/auth/password-reset/confirm/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, token, password })
   });
 }
 

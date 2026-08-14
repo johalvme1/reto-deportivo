@@ -47,6 +47,9 @@ export default function Login() {
         <div className="auth-link">
           ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
         </div>
+        <div className="auth-link" style={{ marginTop: 4 }}>
+          <Link to="/reset-password">¿Olvidaste tu contraseña?</Link>
+        </div>
       </div>
     </div>
   );

@@ -5,8 +5,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-p@*35_i(3p0q82o24sugg1e6-@uo+u-s&37x89tic1^@@m=4g3')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
-CSRF_TRUSTED_ORIGINS = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS') else []
+EXTRA_HOSTS = ['viveelreto.com', 'www.viveelreto.com', 'johalvme.pythonanywhere.com']
+ALLOWED_HOSTS = [h for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h] or ['*']
+ALLOWED_HOSTS += [h for h in EXTRA_HOSTS if h not in ALLOWED_HOSTS]
+CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in EXTRA_HOSTS] + ([f'https://{h}' for h in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if h] if os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS') else [])
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True

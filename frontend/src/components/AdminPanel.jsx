@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions } from '../api';
+import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions, getUsers, deleteUser, requestPasswordReset } from '../api';
+import { useAuth } from '../context/AuthContext';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
 import DonutProgress from './DonutProgress';
 
 function ChallengeManager() {
+  const { user } = useAuth();
   const [challenges, setChallenges] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -21,6 +23,9 @@ function ChallengeManager() {
   const [pendingCompletions, setPendingCompletions] = useState([]);
   const [reviews, setReviews] = useState({});
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [reset, setReset] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(null);
 
@@ -44,6 +49,38 @@ function ChallengeManager() {
     try { setPendingUsers(await getPendingUsers()); } catch {}
   };
   useEffect(() => { loadPending(); }, []);
+
+  const loadUsers = async () => {
+    try { setUsers(await getUsers()); } catch {}
+  };
+  useEffect(() => { if (user.is_superuser) loadUsers(); }, [user]);
+
+  const handleDeleteUser = async (u) => {
+    if (!confirm(`¿Eliminar a ${u.name || u.username}? Se borrarán también sus puntos, evidencias y registros.`)) return;
+    try {
+      await deleteUser(u.id);
+      alert('Usuario eliminado');
+      loadUsers();
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleResetPassword = async (u) => {
+    setCopied(false);
+    try {
+      const res = await requestPasswordReset(u.id);
+      setReset({ name: u.name || u.username, url: res.reset_url });
+    } catch (err) { alert(err.message); }
+  };
+
+  const copyReset = async () => {
+    if (!reset) return;
+    try {
+      await navigator.clipboard.writeText(reset.url);
+      setCopied(true);
+    } catch {
+      prompt('Copia el enlace:', reset.url);
+    }
+  };
 
   const handleApprove = async (id) => {
     try {
@@ -293,6 +330,60 @@ function ChallengeManager() {
           </div>
         ))}
       </div>
+      {user.is_superuser && (
+        <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #f1e0f5' }}>
+          <h2>Usuarios registrados</h2>
+          <p style={{ color: '#b088c0', fontSize: '0.85rem', marginBottom: 12 }}>
+            Solo el administrador puede eliminar usuarios. Se borran también sus puntos, evidencias y registros.
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Usuario</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Email</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}>Rol</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '2px solid #f1e0f5', color: '#6b4a70' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid #f5eafa' }}>
+                    <td style={{ padding: '8px 10px' }}>
+                      <strong>{u.name || u.username}</strong>{u.username !== (u.name || u.username) && <span style={{ color: '#b088c0' }}> · {u.username}</span>}
+                      {u.is_superuser && <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>Admin</span>}
+                    </td>
+                    <td style={{ padding: '8px 10px' }}>{u.email}</td>
+                    <td style={{ padding: '8px 10px' }}>{u.role === 'supervisor' ? 'Supervisor' : 'Participante'}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                      <button className="btn btn-warning btn-sm" onClick={() => handleResetPassword(u)}>🔑 Restablecer contraseña</button>
+                      {u.id !== user.id && (
+                        <button className="btn btn-danger btn-sm" style={{ marginLeft: 6 }} onClick={() => handleDeleteUser(u)}>Eliminar</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr><td colSpan="4" style={{ padding: '8px 10px' }}>Sin usuarios</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {reset && (
+            <div style={{ border: '1px solid #f0d48a', background: '#fff3cd', borderRadius: 10, padding: 12, marginTop: 12 }}>
+              <strong>🔑 Enlace para {reset.name}</strong>
+              <p style={{ fontSize: '0.82rem', color: '#8a6d1a', margin: '6px 0' }}>
+                Comparte este enlace con el usuario. Al abrirlo podrá escribir una contraseña nueva (válido hasta que cambie la contraseña).
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input readOnly value={reset.url} style={{ flex: 1, minWidth: 220 }} onClick={e => e.target.select()} />
+                <button className="btn btn-primary btn-sm" onClick={copyReset}>{copied ? '✅ Copiado' : 'Copiar enlace'}</button>
+                <button className="btn btn-sm" onClick={() => setReset(null)}>Cerrar</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {preview && <Lightbox src={preview.src} kind={preview.kind} onClose={() => setPreview(null)} />}
     </div>
   );
