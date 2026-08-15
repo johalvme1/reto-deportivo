@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getMedals, getUnreadCount, completeChallenge } from '../api';
+import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getUnreadCount, completeChallenge } from '../api';
 import DonutProgress from './DonutProgress';
 
 function fmtCountdown(ms) {
@@ -22,7 +22,6 @@ export default function Dashboard() {
   const [activities, setActivities] = useState([]);
   const [history, setHistory] = useState([]);
   const [challenges, setChallenges] = useState([]);
-  const [medals, setMedals] = useState([]);
   const [steps, setSteps] = useState('');
   const [selectedActivity, setSelectedActivity] = useState('');
   const [newActivity, setNewActivity] = useState('');
@@ -54,19 +53,17 @@ export default function Dashboard() {
 
   const loadData = async () => {
     setError(''); setSuccess('');
-    const [todayRes, activitiesRes, historyRes, challengesRes, medalsRes] = await Promise.allSettled([
+    const [todayRes, activitiesRes, historyRes, challengesRes] = await Promise.allSettled([
       getTodayPoints(),
       getActivities(),
       getHistory(),
-      getChallenges(),
-      getMedals()
+      getChallenges()
     ]);
     if (todayRes.status === 'fulfilled') setData(todayRes.value);
     if (activitiesRes.status === 'fulfilled') setActivities(activitiesRes.value);
     if (historyRes.status === 'fulfilled') setHistory(historyRes.value);
     if (challengesRes.status === 'fulfilled') setChallenges(challengesRes.value);
-    if (medalsRes.status === 'fulfilled') setMedals(medalsRes.value);
-    const failed = [todayRes, activitiesRes, historyRes, challengesRes, medalsRes].filter(r => r.status === 'rejected');
+    const failed = [todayRes, activitiesRes, historyRes, challengesRes].filter(r => r.status === 'rejected');
     if (failed.length) setError(failed.map(r => r.reason?.message || 'Error del servidor').join(' '));
   };
 
@@ -417,27 +414,6 @@ export default function Dashboard() {
                 </div>
               );
             })}
-          </div>
-        </div>
-      )}
-
-      {medals.length > 0 && (
-        <div className="card">
-          <h2>🏅 Medallas por Retos</h2>
-          <div className="medals-list">
-            {medals.map(m => (
-              <div key={m.id} className={`medal-item ${m.user === user.id ? 'mine' : ''}`}>
-                <div className="medal-icon">🏅</div>
-                <div style={{ flex: 1 }}>
-                  <strong>{m.challenge_title}</strong>
-                  <span className="badge badge-supervisor" style={{ marginLeft: 8 }}>+{m.challenge_points} pts</span>
-                  {m.user === user.id && <span className="badge badge-participant" style={{ marginLeft: 8 }}>Tuya</span>}
-                  <div style={{ fontSize: '0.8rem', color: '#b088c0' }}>
-                    {m.user_name} · {new Date(m.awarded_at).toLocaleDateString('es')}
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       )}

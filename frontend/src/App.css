@@ -626,6 +626,34 @@ textarea { resize: vertical; min-height: 80px; }
   justify-content: center;
 }
 
+.medals-summary { display: grid; gap: 10px; margin-bottom: 18px; }
+.medal-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fdf4fb, #f6eefb);
+  border: 1px solid #f1e0f5;
+  border-radius: 12px;
+}
+.medal-summary-item.mine {
+  border-color: #e6a8ce;
+  background: linear-gradient(135deg, #fdeef6, #f3e7fa);
+  box-shadow: 0 2px 10px rgba(199,139,227,0.2);
+}
+.medal-count {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f78ec6, #a8a1f0);
+  color: white;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
 @media (max-width: 600px) {
   body { background-attachment: scroll; }
   .container { padding: 12px; }

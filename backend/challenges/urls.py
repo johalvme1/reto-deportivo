@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ChallengeViewSet, SubmitEvidenceView, ReviewSubmissionView, DeleteSubmissionView, ChallengeSubmissionsView, MySubmissionsView, MedalsView, EvidenceGalleryView, EvidenceLikeToggleView, ApproveUserView, CompleteChallengeView, PendingCompletionsView, SupervisorDashboardView
+from .views import ChallengeViewSet, SubmitEvidenceView, ReviewSubmissionView, DeleteSubmissionView, ChallengeSubmissionsView, MySubmissionsView, MedalsView, MedalSummaryView, EvidenceGalleryView, EvidenceLikeToggleView, ApproveUserView, CompleteChallengeView, PendingCompletionsView, SupervisorDashboardView
 
 router = DefaultRouter()
 router.register(r'', ChallengeViewSet)
@@ -8,6 +8,7 @@ router.register(r'', ChallengeViewSet)
 urlpatterns = [
     path('evidence/likes/', EvidenceLikeToggleView.as_view(), name='evidence-like-toggle'),
     path('evidence/', EvidenceGalleryView.as_view(), name='evidence-gallery'),
+    path('medals/summary/', MedalSummaryView.as_view(), name='medal-summary'),
     path('medals/', MedalsView.as_view(), name='medals'),
     path('completions/', PendingCompletionsView.as_view(), name='pending-completions'),
     path('dashboard/', SupervisorDashboardView.as_view(), name='supervisor-dashboard'),

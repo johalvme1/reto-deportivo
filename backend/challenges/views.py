@@ -267,6 +267,21 @@ class MedalsView(APIView):
             medals = medals.filter(user=request.user)
         return Response(MedalSerializer(medals, many=True).data)
 
+class MedalSummaryView(APIView):
+    def get(self, request):
+        by_user = {}
+        for m in Medal.objects.select_related('user', 'challenge'):
+            entry = by_user.setdefault(m.user_id, {
+                'user': m.user_id,
+                'user_name': m.user.name or m.user.username,
+                'count': 0,
+                'points': 0,
+            })
+            entry['count'] += 1
+            entry['points'] += m.challenge.points
+        summary = sorted(by_user.values(), key=lambda e: (-e['count'], e['user_name'].lower()))
+        return Response(summary)
+
 class SupervisorDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSupervisor]
 

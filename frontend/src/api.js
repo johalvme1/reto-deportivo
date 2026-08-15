@@ -340,6 +340,10 @@ export function getMedals(mine) {
   return request(`/challenges/medals/${query}`);
 }
 
+export function getMedalSummary() {
+  return request('/challenges/medals/summary/');
+}
+
 export function getEvidence() {
   return request('/challenges/evidence/');
 }
