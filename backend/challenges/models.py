@@ -97,3 +97,15 @@ class EvidenceLike(models.Model):
 
     def __str__(self):
         return f'{self.user} → {self.evidence_id}'
+
+class ChallengeExpiryNotice(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='expiry_notices')
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name='expiry_notices')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'challenge')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Aviso: {self.user} - {self.challenge.title}'

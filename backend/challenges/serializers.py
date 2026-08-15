@@ -1,5 +1,7 @@
 from rest_framework import serializers
+from django.utils import timezone
 from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion
+from accounts.permissions import is_supervisor_user
 from reto_deportivo.media_stream import media_stream_url
 
 class StreamFileField(serializers.FileField):
@@ -11,15 +13,30 @@ class ChallengeSerializer(serializers.ModelSerializer):
     submissions_count = serializers.SerializerMethodField()
     user_submission = serializers.SerializerMethodField()
     is_active = serializers.SerializerMethodField()
+    hidden = serializers.SerializerMethodField()
     video = StreamFileField(required=False, allow_null=True)
 
     class Meta:
         model = Challenge
-        fields = ['id', 'title', 'description', 'points', 'video', 'start_date', 'end_date', 'active', 'is_active', 'created_by', 'created_at', 'submissions_count', 'user_submission']
+        fields = ['id', 'title', 'description', 'points', 'video', 'start_date', 'end_date', 'active', 'is_active', 'hidden', 'created_by', 'created_at', 'submissions_count', 'user_submission']
         read_only_fields = ['created_by', 'created_at']
 
     def get_is_active(self, obj):
         return obj.effective_active()
+
+    def get_hidden(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        if is_supervisor_user(request.user):
+            return False
+        now = timezone.now()
+        if not obj.end_date or now <= obj.end_date:
+            return False
+        subs = obj.submissions.filter(user=request.user)
+        if subs.exists():
+            return subs.filter(status='approved').exists()
+        return True
 
     def get_submissions_count(self, obj):
         return obj.submissions.count()

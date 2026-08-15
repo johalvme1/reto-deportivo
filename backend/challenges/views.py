@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.db.models import Q, Count
 from django.contrib.auth import get_user_model
 from datetime import timedelta
-from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion, EvidenceLike
+from .models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion, EvidenceLike, ChallengeExpiryNotice
 from .serializers import ChallengeSerializer, ChallengeSubmissionSerializer, MedalSerializer
 from accounts.permissions import is_supervisor_user
 from points.models import DailyPoint
@@ -16,6 +16,22 @@ from reto_deportivo.media_stream import media_stream_url
 from uploads.views import claim_pending, resolve_field
 
 User = get_user_model()
+
+def send_expired_challenge_notices(user):
+    now = timezone.now()
+    expired = Challenge.objects.filter(end_date__lt=now)
+    for c in expired:
+        if c.submissions.filter(user=user).exists():
+            continue
+        if ChallengeExpiryNotice.objects.filter(user=user, challenge=c).exists():
+            continue
+        ChallengeExpiryNotice.objects.create(user=user, challenge=c)
+        author = c.created_by if c.created_by_id else User.objects.filter(is_superuser=True).first()
+        if author:
+            ChatMessage.objects.create(
+                user=author,
+                text=f'⚠️ El reto "{c.title}" terminó y no enviaste ninguna evidencia. Perdiste los puntos de este reto.'
+            )
 
 class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -36,6 +52,11 @@ class ChallengeViewSet(viewsets.ModelViewSet):
         if active == 'true':
             qs = qs.filter(active=True)
         return qs
+
+    def list(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not is_supervisor_user(request.user):
+            send_expired_challenge_notices(request.user)
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

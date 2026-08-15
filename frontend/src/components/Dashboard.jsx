@@ -158,6 +158,7 @@ export default function Dashboard() {
   };
 
   const dp = data?.dailyPoint;
+  const visibleChallenges = challenges.filter(c => !c.hidden);
 
   return (
     <div>
@@ -286,11 +287,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {challenges.length > 0 && (
+      {visibleChallenges.length > 0 && (
         <div className="card">
           <h2>Retos Extra</h2>
           <div className="challenge-list">
-            {challenges.map(c => {
+            {visibleChallenges.map(c => {
               const start = c.start_date ? new Date(c.start_date).getTime() : null;
               const end = c.end_date ? new Date(c.end_date).getTime() : null;
               const us = c.user_submission;
