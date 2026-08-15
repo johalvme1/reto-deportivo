@@ -378,7 +378,7 @@ export default function Dashboard() {
                       {canSubmit && (
                         <>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            {[1, 2, 3].map(n => {
+                            {[1, 2, 3, 4].map(n => {
                               const used = (us?.active_count ?? 0) >= n;
                               return (
                                 <button
@@ -392,7 +392,7 @@ export default function Dashboard() {
                               );
                             })}
                           </div>
-                          <span style={{ fontSize: '0.72rem', color: '#b088c0' }}>Puedes enviar hasta 3 evidencias por reto.</span>
+                          <span style={{ fontSize: '0.72rem', color: '#b088c0' }}>Puedes enviar hasta 4 evidencias por reto.</span>
                         </>
                       )}
                       {!approved && c.is_active && inWindow && (

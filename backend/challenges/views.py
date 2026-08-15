@@ -114,7 +114,7 @@ class SubmitEvidenceView(APIView):
         if not (image_raw or image_dest or video_raw or video_dest):
             return Response({'error': 'Debes subir una foto o un video como evidencia'}, status=status.HTTP_400_BAD_REQUEST)
 
-        MAX_SUBMISSIONS = 3
+        MAX_SUBMISSIONS = 4
         active_count = ChallengeSubmission.objects.filter(challenge=challenge, user=request.user).exclude(status__in=['rejected', 'returned']).count()
         if active_count >= MAX_SUBMISSIONS:
             return Response({'error': f'Ya subiste las {MAX_SUBMISSIONS} evidencias permitidas para este reto'}, status=status.HTTP_400_BAD_REQUEST)

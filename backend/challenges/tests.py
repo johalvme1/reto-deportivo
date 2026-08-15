@@ -85,3 +85,30 @@ class ChallengeExpiryTests(TestCase):
         data = ChallengeSerializer(
             self.challenge, context={'request': FakeRequest}).data
         self.assertFalse(data['hidden'])
+
+    def test_hidden_when_deactivated_before_end_date(self):
+        from challenges.serializers import ChallengeSerializer
+        self.challenge.end_date = timezone.now() + timedelta(days=1)
+        self.challenge.active = False
+        self.challenge.save()
+
+        class FakeRequest:
+            user = self.participant
+            is_authenticated = True
+
+        data = ChallengeSerializer(
+            self.challenge, context={'request': FakeRequest}).data
+        self.assertTrue(data['hidden'])
+
+    def test_hidden_true_when_rejected_finished(self):
+        from challenges.serializers import ChallengeSerializer
+        ChallengeSubmission.objects.create(
+            user=self.participant, challenge=self.challenge, status='rejected')
+
+        class FakeRequest:
+            user = self.participant
+            is_authenticated = True
+
+        data = ChallengeSerializer(
+            self.challenge, context={'request': FakeRequest}).data
+        self.assertTrue(data['hidden'])

@@ -31,11 +31,17 @@ class ChallengeSerializer(serializers.ModelSerializer):
         if is_supervisor_user(request.user):
             return False
         now = timezone.now()
-        if not obj.end_date or now <= obj.end_date:
+        started = (not obj.start_date) or obj.start_date <= now
+        if not started:
+            return False
+        finished = (obj.end_date and now > obj.end_date) or not obj.active
+        if not finished:
             return False
         subs = obj.submissions.filter(user=request.user)
-        if subs.exists():
-            return subs.filter(status='approved').exists()
+        if not subs.exists():
+            return True
+        if subs.filter(status='pending').exists():
+            return False
         return True
 
     def get_submissions_count(self, obj):
@@ -52,7 +58,7 @@ class ChallengeSerializer(serializers.ModelSerializer):
         return {
             'count': subs.count(),
             'active_count': subs.exclude(status__in=['rejected', 'returned']).count(),
-            'max': 3,
+            'max': 4,
             'total_points': obj.points if approved else 0,
             'completion_requested': ChallengeCompletion.objects.filter(
                 user=request.user, challenge=obj, status='requested'
