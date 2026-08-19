@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 export default function Lightbox({ src, kind = 'image', onClose }) {
+  const videoRef = useRef();
+
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
@@ -10,6 +12,13 @@ export default function Lightbox({ src, kind = 'image', onClose }) {
       document.body.style.overflow = '';
     };
   }, [onClose]);
+
+  useEffect(() => {
+    if (kind === 'video' && videoRef.current) {
+      videoRef.current.volume = 1;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [kind, src]);
 
   return (
     <div
@@ -47,7 +56,7 @@ export default function Lightbox({ src, kind = 'image', onClose }) {
         ✕
       </button>
       {kind === 'video' ? (
-        <video src={src} controls playsInline style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 10 }} />
+        <video ref={videoRef} src={src} controls autoPlay playsInline style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 10 }} />
       ) : (
         <img src={src} alt="evidencia" onClick={e => e.stopPropagation()} style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 10 }} />
       )}
