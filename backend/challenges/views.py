@@ -30,6 +30,7 @@ def send_expired_challenge_notices(user):
         if author:
             ChatMessage.objects.create(
                 user=author,
+                recipient=user,
                 text=f'⚠️ El reto "{c.title}" terminó y no enviaste ninguna evidencia. Perdiste los puntos de este reto.'
             )
 

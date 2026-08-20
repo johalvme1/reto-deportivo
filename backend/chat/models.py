@@ -3,6 +3,7 @@ from django.conf import settings
 
 class ChatMessage(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_messages')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='direct_messages', help_text='Si se define, el mensaje es privado y solo lo ve ese usuario')
     text = models.CharField(max_length=1000)
     created_at = models.DateTimeField(auto_now_add=True)
 

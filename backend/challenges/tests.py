@@ -28,6 +28,7 @@ class ChallengeExpiryTests(TestCase):
         self.assertEqual(ChatMessage.objects.count(), 1)
         msg = ChatMessage.objects.first()
         self.assertEqual(msg.user, self.supervisor)
+        self.assertEqual(msg.recipient, self.participant)
         self.assertIn('Reto vencido', msg.text)
         self.assertIn('no enviaste ninguna evidencia', msg.text)
 

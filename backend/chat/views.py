@@ -1,6 +1,7 @@
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
 from .models import ChatMessage, ChatReadState
 from .serializers import ChatMessageSerializer
 
@@ -10,27 +11,31 @@ def get_read_state(user):
     return state
 
 
-def unread_count_for(state):
-    return ChatMessage.objects.filter(id__gt=state.last_read_id).count()
+def visible_messages(user):
+    return ChatMessage.objects.filter(Q(recipient__isnull=True) | Q(recipient=user))
+
+
+def unread_count_for(user, state):
+    return visible_messages(user).filter(id__gt=state.last_read_id).count()
 
 
 class ChatView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        qs = ChatMessage.objects.select_related('user').order_by('-created_at')[:100]
+        qs = visible_messages(request.user).select_related('user').order_by('-created_at')[:100]
         messages = list(reversed(qs))
         state = get_read_state(request.user)
         return Response({
             'messages': ChatMessageSerializer(messages, many=True).data,
             'last_read_id': state.last_read_id,
-            'unread_count': unread_count_for(state),
+            'unread_count': unread_count_for(request.user, state),
         })
 
     def post(self, request):
         text = request.data.get('text', '')
         if not isinstance(text, str) or not text.strip():
-            return Response({'error': 'El mensaje no puede estar vacío'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'El mensaje no puede estar vacA-o'}, status=status.HTTP_400_BAD_REQUEST)
         text = text.strip()[:1000]
         message = ChatMessage.objects.create(user=request.user, text=text)
 
@@ -50,13 +55,21 @@ class ChatReadView(APIView):
         try:
             last_read_id = int(raw)
         except (TypeError, ValueError):
-            return Response({'error': 'last_read_id inválido'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'last_read_id invA�lido'}, status=status.HTTP_400_BAD_REQUEST)
 
         state = get_read_state(request.user)
         if last_read_id > state.last_read_id:
             state.last_read_id = last_read_id
             state.save()
-        return Response({'unread_count': unread_count_for(state)})
+        return Response({'unread_count': unread_count_for(request.user, state)})
+
+
+class ChatUnreadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        state = get_read_state(request.user)
+        return Response({'unread_count': unread_count_for(request.user, state)})
 
 
 class ChatUnreadView(APIView):
