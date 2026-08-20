@@ -31,7 +31,11 @@ class ChallengeSerializer(serializers.ModelSerializer):
         if is_supervisor_user(request.user):
             return False
         now = timezone.now()
-        if not obj.end_date or now <= obj.end_date:
+        started = (not obj.start_date) or obj.start_date <= now
+        if not started:
+            return False
+        finished = (obj.end_date and now > obj.end_date) or not obj.active
+        if not finished:
             return False
         subs = obj.submissions.filter(user=request.user)
         if not subs.exists():
