@@ -371,12 +371,9 @@ class DangerZoneWipeView(APIView):
         ChatMessage.objects.all().delete()
         PendingUpload.objects.all().delete()
 
-        User = get_user_model()
-        User.objects.filter(is_superuser=False).delete()
-
         for folder in ['uploads', 'steps', 'measurements', 'challenges', 'pending']:
             path = settings.MEDIA_ROOT / folder
             if path.exists():
                 shutil.rmtree(path, ignore_errors=True)
 
-        return Response({'ok': True, 'message': 'Base de datos y archivos borrados completamente'})
+        return Response({'ok': True, 'message': 'Datos y archivos borrados. Usuarios conservados.'})
