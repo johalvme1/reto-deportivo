@@ -247,14 +247,15 @@ class MeasurementView(APIView):
     def get(self, request):
         user_id = request.query_params.get('user_id')
         if user_id:
-            measurements = Measurement.objects.filter(user_id=user_id).order_by('-date')[:30]
+            measurements = Measurement.objects.filter(user_id=user_id).order_by('-created_at')[:50]
         else:
-            measurements = Measurement.objects.select_related('user').order_by('-date')[:100]
+            measurements = Measurement.objects.select_related('user').order_by('-created_at')[:200]
         data = []
         for m in measurements:
             data.append({
                 'id': m.id,
                 'date': m.date.isoformat(),
+                'created_at': m.created_at.isoformat(),
                 'user_id': m.user_id,
                 'user_name': m.user.name or m.user.username,
                 'peso': float(m.peso) if m.peso is not None else None,
@@ -273,7 +274,7 @@ class MeasurementView(APIView):
         if peso is None and grasa is None and musculo is None:
             return Response({'error': 'Ingresa al menos una medida'}, status=status.HTTP_400_BAD_REQUEST)
 
-        m, created = Measurement.objects.get_or_create(user=request.user, date=today)
+        m = Measurement(user=request.user, date=today)
         if peso is not None: m.peso = peso
         if grasa is not None: m.grasa = grasa
         if musculo is not None: m.musculo = musculo
@@ -282,6 +283,7 @@ class MeasurementView(APIView):
         return Response({
             'id': m.id,
             'date': m.date.isoformat(),
+            'created_at': m.created_at.isoformat(),
             'user_id': m.user_id,
             'user_name': m.user.name or m.user.username,
             'peso': float(m.peso) if m.peso is not None else None,

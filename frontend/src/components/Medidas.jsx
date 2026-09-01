@@ -80,7 +80,7 @@ export default function Medidas() {
     <div className="card">
       <h1>📏 Medidas Corporales</h1>
       <p style={{ fontSize: '0.85rem', color: '#b088c0', marginBottom: 16 }}>
-        Registra y compara las medidas de todos los participantes.
+        Registra y compara las medidas de todos los participantes. Puedes registrar varias veces al día.
       </p>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -128,7 +128,7 @@ export default function Medidas() {
               <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' }}>
                 <thead>
                   <tr>
-                    <th style={thStyle}>Fecha</th>
+                    <th style={thStyle}>Fecha / Hora</th>
                     <th style={thStyle}>Peso (kg)</th>
                     <th style={thStyle}>Grasa (%)</th>
                     <th style={thStyle}>Músculo (kg)</th>
@@ -141,7 +141,10 @@ export default function Medidas() {
                     const dPeso = diff(m.peso, prev?.peso);
                     const dGrasa = diff(m.grasa, prev?.grasa);
                     const dMusculo = diff(m.musculo, prev?.musculo);
+                    const createdAt = m.created_at ? new Date(m.created_at) : null;
                     const isToday = m.date === new Date().toISOString().slice(0, 10);
+                    const timeStr = createdAt ? createdAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '';
+                    const dateStr = new Date(m.date + 'T00:00:00').toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' });
                     return (
                       <tr key={m.id} style={{
                         background: isToday ? 'linear-gradient(135deg, #fdeef6, #f3e7fa)' : '#fdf4fb',
@@ -150,7 +153,7 @@ export default function Medidas() {
                       }}>
                         <td style={tdStyle}>
                           {isToday && <span style={{ marginRight: 4 }}>📌</span>}
-                          {new Date(m.date + 'T00:00:00').toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          {dateStr} {timeStr && <span style={{ color: '#b088c0', fontSize: '0.8rem' }}>{timeStr}</span>}
                         </td>
                         <td style={tdStyle}>{m.peso ?? '—'}</td>
                         <td style={tdStyle}>{m.grasa ?? '—'}</td>

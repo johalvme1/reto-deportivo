@@ -71,8 +71,7 @@ class Measurement(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'date')
-        ordering = ['-date']
+        ordering = ['-created_at']
 
     def __str__(self):
         return f'Medidas: {self.user.name or self.user.username} - {self.date}'
