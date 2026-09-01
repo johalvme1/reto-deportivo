@@ -49,23 +49,20 @@ export default function Medidas() {
     } catch (err) { setError(err.message); }
   };
 
-  const diff = (current, previous) => {
+  const DiffInline = ({ current, previous }) => {
     if (current == null || previous == null) return null;
-    return (current - previous).toFixed(2);
-  };
-
-  const DiffBadge = ({ value }) => {
-    if (value === null) return <span style={{ color: '#b088c0' }}>—</span>;
-    const num = parseFloat(value);
-    if (num === 0) return <span style={{ color: '#b088c0' }}>0</span>;
+    const diff = (current - previous).toFixed(2);
+    const num = parseFloat(diff);
+    if (num === 0) return null;
     const isUp = num > 0;
     return (
       <span style={{
+        marginLeft: 4,
         color: isUp ? '#ef476f' : '#06d6a0',
         fontWeight: 700,
-        fontSize: '0.85rem'
+        fontSize: '0.75rem'
       }}>
-        {isUp ? '▲' : '▼'} {isUp ? '+' : ''}{value}
+        {isUp ? '▲' : '▼'}{isUp ? '+' : ''}{diff}
       </span>
     );
   };
@@ -132,15 +129,11 @@ export default function Medidas() {
                     <th style={thStyle}>Peso (kg)</th>
                     <th style={thStyle}>Grasa (%)</th>
                     <th style={thStyle}>Músculo (kg)</th>
-                    <th style={thStyle}>Cambio</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((m, i) => {
                     const prev = items[i + 1];
-                    const dPeso = diff(m.peso, prev?.peso);
-                    const dGrasa = diff(m.grasa, prev?.grasa);
-                    const dMusculo = diff(m.musculo, prev?.musculo);
                     const createdAt = m.created_at ? new Date(m.created_at) : null;
                     const isToday = m.date === new Date().toISOString().slice(0, 10);
                     const timeStr = createdAt ? createdAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -155,15 +148,17 @@ export default function Medidas() {
                           {isToday && <span style={{ marginRight: 4 }}>📌</span>}
                           {dateStr} {timeStr && <span style={{ color: '#b088c0', fontSize: '0.8rem' }}>{timeStr}</span>}
                         </td>
-                        <td style={tdStyle}>{m.peso ?? '—'}</td>
-                        <td style={tdStyle}>{m.grasa ?? '—'}</td>
-                        <td style={tdStyle}>{m.musculo ?? '—'}</td>
-                        <td style={{ ...tdStyle, minWidth: 100 }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {m.peso != null && prev?.peso != null && <DiffBadge value={dPeso} />}
-                            {m.grasa != null && prev?.grasa != null && <DiffBadge value={dGrasa} />}
-                            {m.musculo != null && prev?.musculo != null && <DiffBadge value={dMusculo} />}
-                          </div>
+                        <td style={tdStyle}>
+                          {m.peso ?? '—'}
+                          {prev?.peso != null && <DiffInline current={m.peso} previous={prev.peso} />}
+                        </td>
+                        <td style={tdStyle}>
+                          {m.grasa ?? '—'}
+                          {prev?.grasa != null && <DiffInline current={m.grasa} previous={prev.grasa} />}
+                        </td>
+                        <td style={tdStyle}>
+                          {m.musculo ?? '—'}
+                          {prev?.musculo != null && <DiffInline current={m.musculo} previous={prev.musculo} />}
                         </td>
                       </tr>
                     );
