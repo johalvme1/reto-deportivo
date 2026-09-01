@@ -391,3 +391,14 @@ export function setCompetitionPeriod(startDate, endDate) {
     body: JSON.stringify({ start_date: startDate, end_date: endDate })
   });
 }
+
+export function getMeasurements() {
+  return request('/points/measurements/');
+}
+
+export function saveMeasurement(data) {
+  return request('/points/measurements/', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}

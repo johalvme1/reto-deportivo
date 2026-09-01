@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from django.db.models import Count, Q
-from .models import DailyPoint, RestDay, CompetitionPeriod
+from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement
 from .serializers import DailyPointSerializer
 from activities.models import Activity
 from challenges.models import ChallengeSubmission, Challenge, Medal
@@ -239,4 +239,42 @@ class CompetitionPeriodAdminView(APIView):
             'ok': True,
             'start_date': period.start_date.isoformat(),
             'end_date': period.end_date.isoformat(),
+        })
+
+class MeasurementView(APIView):
+    def get(self, request):
+        measurements = Measurement.objects.filter(user=request.user).order_by('-date')[:30]
+        data = []
+        for m in measurements:
+            data.append({
+                'id': m.id,
+                'date': m.date.isoformat(),
+                'peso': float(m.peso) if m.peso is not None else None,
+                'grasa': float(m.grasa) if m.grasa is not None else None,
+                'musculo': float(m.musculo) if m.musculo is not None else None,
+            })
+        return Response(data)
+
+    def post(self, request):
+        from datetime import date as date_type
+        today = date_type.today()
+        peso = request.data.get('peso')
+        grasa = request.data.get('grasa')
+        musculo = request.data.get('musculo')
+
+        if peso is None and grasa is None and musculo is None:
+            return Response({'error': 'Ingresa al menos una medida'}, status=status.HTTP_400_BAD_REQUEST)
+
+        m, created = Measurement.objects.get_or_create(user=request.user, date=today)
+        if peso is not None: m.peso = peso
+        if grasa is not None: m.grasa = grasa
+        if musculo is not None: m.musculo = musculo
+        m.save()
+
+        return Response({
+            'id': m.id,
+            'date': m.date.isoformat(),
+            'peso': float(m.peso) if m.peso is not None else None,
+            'grasa': float(m.grasa) if m.grasa is not None else None,
+            'musculo': float(m.musculo) if m.musculo is not None else None,
         })
