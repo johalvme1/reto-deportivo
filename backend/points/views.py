@@ -1,3 +1,4 @@
+import uuid
 from datetime import date, timedelta
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -50,6 +51,10 @@ class ImageUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
+        today = date.today()
+        if RestDay.objects.filter(user=request.user, date=today).exists():
+            return Response({'error': 'Hoy es tu día de descanso. No puedes subir evidencia.'}, status=status.HTTP_400_BAD_REQUEST)
+
         image_raw, image_dest = resolve_field(request, 'image')
         video_raw, video_dest = resolve_field(request, 'video')
         if not (image_raw or image_dest or video_raw or video_dest):
@@ -78,6 +83,10 @@ class StepsSubmitView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
+        today = date.today()
+        if RestDay.objects.filter(user=request.user, date=today).exists():
+            return Response({'error': 'Hoy es tu día de descanso. No puedes subir pasos.'}, status=status.HTTP_400_BAD_REQUEST)
+
         steps = request.data.get('steps')
         file = request.FILES.get('steps_image')
         dest = claim_pending(request.data.get('steps_image_upload_id'))
@@ -108,6 +117,10 @@ class StepsSubmitView(APIView):
 
 class ActivitySubmitView(APIView):
     def post(self, request):
+        today = date.today()
+        if RestDay.objects.filter(user=request.user, date=today).exists():
+            return Response({'error': 'Hoy es tu día de descanso. No puedes registrar actividad.'}, status=status.HTTP_400_BAD_REQUEST)
+
         activity_id = request.data.get('activity_id')
         if not activity_id:
             return Response({'error': 'Actividad requerida'}, status=status.HTTP_400_BAD_REQUEST)
@@ -196,6 +209,29 @@ class RestDayView(APIView):
             return Response({'error': 'Hoy ya es tu día de descanso'}, status=status.HTTP_400_BAD_REQUEST)
 
         dp.is_rest_day = True
+        dp.steps = 5000
+
+        import base64, os
+        from django.conf import settings
+        placeholder_dir = settings.MEDIA_ROOT / 'uploads'
+        placeholder_dir.mkdir(parents=True, exist_ok=True)
+        placeholder_name = f'uploads/rest_day_{uuid.uuid4().hex[:8]}.png'
+        placeholder_path = settings.MEDIA_ROOT / placeholder_name
+        if not placeholder_path.exists():
+            tiny_png = base64.b64decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+            )
+            with open(placeholder_path, 'wb') as f:
+                f.write(tiny_png)
+
+        dp.image.name = placeholder_name
+        dp.steps_image.name = placeholder_name
+
+        descanso_activity, _ = Activity.objects.get_or_create(
+            name='Día de descanso',
+            defaults={'created_by': request.user},
+        )
+        dp.activity = descanso_activity
         dp.save()
 
         RestDay.objects.create(user=request.user, date=today)

@@ -22,7 +22,7 @@ class DailyPoint(models.Model):
     @property
     def points(self):
         if self.is_rest_day:
-            return 1
+            return 3
         count = 0
         if self.image or self.video: count += 1
         if self.steps is not None and self.steps_image:
