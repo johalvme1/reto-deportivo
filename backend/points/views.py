@@ -280,6 +280,8 @@ class CompetitionPeriodAdminView(APIView):
         })
 
 class MeasurementView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
     def get(self, request):
         user_id = request.query_params.get('user_id')
         if user_id:
@@ -295,8 +297,10 @@ class MeasurementView(APIView):
                 'user_id': m.user_id,
                 'user_name': m.user.name or m.user.username,
                 'peso': float(m.peso) if m.peso is not None else None,
-                'grasa': float(m.grasa) if m.grasa is not None else None,
+                'grasa_corporal': float(m.grasa_corporal) if m.grasa_corporal is not None else None,
+                'grasa_visceral': float(m.grasa_visceral) if m.grasa_visceral is not None else None,
                 'musculo': float(m.musculo) if m.musculo is not None else None,
+                'photo': m.photo.url if m.photo else None,
             })
         return Response(data)
 
@@ -304,16 +308,20 @@ class MeasurementView(APIView):
         from datetime import date as date_type
         today = date_type.today()
         peso = request.data.get('peso')
-        grasa = request.data.get('grasa')
+        grasa_corporal = request.data.get('grasa_corporal')
+        grasa_visceral = request.data.get('grasa_visceral')
         musculo = request.data.get('musculo')
+        photo = request.FILES.get('photo')
 
-        if peso is None and grasa is None and musculo is None:
-            return Response({'error': 'Ingresa al menos una medida'}, status=status.HTTP_400_BAD_REQUEST)
+        if peso is None and grasa_corporal is None and grasa_visceral is None and musculo is None and not photo:
+            return Response({'error': 'Ingresa al menos una medida o foto'}, status=status.HTTP_400_BAD_REQUEST)
 
         m = Measurement(user=request.user, date=today)
         if peso is not None: m.peso = peso
-        if grasa is not None: m.grasa = grasa
+        if grasa_corporal is not None: m.grasa_corporal = grasa_corporal
+        if grasa_visceral is not None: m.grasa_visceral = grasa_visceral
         if musculo is not None: m.musculo = musculo
+        if photo: m.photo = photo
         m.save()
 
         return Response({
@@ -323,6 +331,8 @@ class MeasurementView(APIView):
             'user_id': m.user_id,
             'user_name': m.user.name or m.user.username,
             'peso': float(m.peso) if m.peso is not None else None,
-            'grasa': float(m.grasa) if m.grasa is not None else None,
+            'grasa_corporal': float(m.grasa_corporal) if m.grasa_corporal is not None else None,
+            'grasa_visceral': float(m.grasa_visceral) if m.grasa_visceral is not None else None,
             'musculo': float(m.musculo) if m.musculo is not None else None,
+            'photo': m.photo.url if m.photo else None,
         })

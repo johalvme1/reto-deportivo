@@ -397,8 +397,9 @@ export function getMeasurements() {
 }
 
 export function saveMeasurement(data) {
+  const isFormData = data instanceof FormData;
   return request('/points/measurements/', {
     method: 'POST',
-    body: JSON.stringify(data)
+    body: isFormData ? data : JSON.stringify(data)
   });
 }

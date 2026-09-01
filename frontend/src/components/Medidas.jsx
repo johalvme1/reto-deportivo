@@ -8,8 +8,10 @@ export default function Medidas() {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(user.id);
   const [peso, setPeso] = useState('');
-  const [grasa, setGrasa] = useState('');
+  const [grasaCorporal, setGrasaCorporal] = useState('');
+  const [grasaVisceral, setGrasaVisceral] = useState('');
   const [musculo, setMusculo] = useState('');
+  const [photo, setPhoto] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -33,18 +35,20 @@ export default function Medidas() {
 
   const handleSave = async () => {
     setError(''); setSuccess('');
-    if (!peso && !grasa && !musculo) {
-      setError('Ingresa al menos una medida');
+    if (!peso && !grasaCorporal && !grasaVisceral && !musculo && !photo) {
+      setError('Ingresa al menos una medida o foto');
       return;
     }
     try {
-      const data = {};
-      if (peso) data.peso = parseFloat(peso);
-      if (grasa) data.grasa = parseFloat(grasa);
-      if (musculo) data.musculo = parseFloat(musculo);
-      await saveMeasurement(data);
+      const formData = new FormData();
+      if (peso) formData.append('peso', parseFloat(peso));
+      if (grasaCorporal) formData.append('grasa_corporal', parseFloat(grasaCorporal));
+      if (grasaVisceral) formData.append('grasa_visceral', parseFloat(grasaVisceral));
+      if (musculo) formData.append('musculo', parseFloat(musculo));
+      if (photo) formData.append('photo', photo);
+      await saveMeasurement(formData);
       setSuccess('Medidas guardadas');
-      setPeso(''); setGrasa(''); setMusculo('');
+      setPeso(''); setGrasaCorporal(''); setGrasaVisceral(''); setMusculo(''); setPhoto(null);
       load();
     } catch (err) { setError(err.message); }
   };
@@ -99,17 +103,27 @@ export default function Medidas() {
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Peso (kg)</label>
             <input type="number" step="0.01" value={peso} onChange={e => setPeso(e.target.value)}
-              placeholder="Ej: 70.5" style={{ display: 'block', marginTop: 4, width: 120 }} />
+              placeholder="Ej: 70.5" style={{ display: 'block', marginTop: 4, width: 110 }} />
           </div>
           <div>
-            <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa (%)</label>
-            <input type="number" step="0.01" value={grasa} onChange={e => setGrasa(e.target.value)}
-              placeholder="Ej: 22.5" style={{ display: 'block', marginTop: 4, width: 120 }} />
+            <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa corporal (%)</label>
+            <input type="number" step="0.01" value={grasaCorporal} onChange={e => setGrasaCorporal(e.target.value)}
+              placeholder="Ej: 22.5" style={{ display: 'block', marginTop: 4, width: 110 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa visceral</label>
+            <input type="number" step="0.01" value={grasaVisceral} onChange={e => setGrasaVisceral(e.target.value)}
+              placeholder="Ej: 8" style={{ display: 'block', marginTop: 4, width: 110 }} />
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Músculo (kg)</label>
             <input type="number" step="0.01" value={musculo} onChange={e => setMusculo(e.target.value)}
-              placeholder="Ej: 35.2" style={{ display: 'block', marginTop: 4, width: 120 }} />
+              placeholder="Ej: 35.2" style={{ display: 'block', marginTop: 4, width: 110 }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Foto</label>
+            <input type="file" accept="image/*" onChange={e => setPhoto(e.target.files[0])}
+              style={{ display: 'block', marginTop: 4, fontSize: '0.8rem' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button className="btn btn-primary btn-sm" onClick={handleSave}>Guardar</button>
@@ -127,8 +141,10 @@ export default function Medidas() {
                   <tr>
                     <th style={thStyle}>Fecha / Hora</th>
                     <th style={thStyle}>Peso (kg)</th>
-                    <th style={thStyle}>Grasa (%)</th>
+                    <th style={thStyle}>Grasa corp. (%)</th>
+                    <th style={thStyle}>Grasa vis.</th>
                     <th style={thStyle}>Músculo (kg)</th>
+                    <th style={thStyle}>Foto</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -153,12 +169,21 @@ export default function Medidas() {
                           {prev?.peso != null && <DiffInline current={m.peso} previous={prev.peso} />}
                         </td>
                         <td style={tdStyle}>
-                          {m.grasa ?? '—'}
-                          {prev?.grasa != null && <DiffInline current={m.grasa} previous={prev.grasa} />}
+                          {m.grasa_corporal ?? '—'}
+                          {prev?.grasa_corporal != null && <DiffInline current={m.grasa_corporal} previous={prev.grasa_corporal} />}
+                        </td>
+                        <td style={tdStyle}>
+                          {m.grasa_visceral ?? '—'}
+                          {prev?.grasa_visceral != null && <DiffInline current={m.grasa_visceral} previous={prev.grasa_visceral} />}
                         </td>
                         <td style={tdStyle}>
                           {m.musculo ?? '—'}
                           {prev?.musculo != null && <DiffInline current={m.musculo} previous={prev.musculo} />}
+                        </td>
+                        <td style={tdStyle}>
+                          {m.photo ? (
+                            <a href={m.photo} target="_blank" rel="noopener noreferrer" style={{ color: '#d9629f' }}>📷 Ver</a>
+                          ) : '—'}
                         </td>
                       </tr>
                     );

@@ -66,8 +66,10 @@ class Measurement(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='measurements')
     date = models.DateField()
     peso = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text='Peso en kg')
-    grasa = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text='Grasa corporal en %')
+    grasa_corporal = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text='Grasa corporal en %')
+    grasa_visceral = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text='Grasa visceral')
     musculo = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text='Músculo en kg')
+    photo = models.ImageField(upload_to='measurements/', null=True, blank=True, help_text='Foto de las medidas')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
