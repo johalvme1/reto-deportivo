@@ -198,7 +198,7 @@ export default function Dashboard() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      {!data?.hasRestThisWeek && !data?.hasRestToday && (
+      {!data?.hasRestThisWeek && !data?.hasRestToday && !data?.hasActiveChallenge && (
         <div className="card" style={{ background: 'linear-gradient(135deg, #e8f5e9, #f1f8e9)', border: '1px solid #c8e6c9' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div>

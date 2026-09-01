@@ -28,15 +28,22 @@ class TodayPointsView(APIView):
             user=request.user, date__gte=week_start, date__lte=week_end
         ).exists()
 
+        has_active_challenge = Challenge.objects.filter(
+            start_date__date__lte=today,
+            end_date__date__gte=today,
+            active=True
+        ).exists()
+
         serializer = DailyPointSerializer(dp) if dp else None
         return Response({
             'date': today.isoformat(),
             'todayPoints': dp.points if dp else 0,
             'weeklyPoints': weekly_points,
             'maxToday': 3,
-            'dailyPoint': serializer.data if serializer else None,
+            'dailyPoint': serializer.data if dp else None,
             'hasRestToday': has_rest_today,
             'hasRestThisWeek': has_rest_this_week,
+            'hasActiveChallenge': has_active_challenge,
         })
 
 class ImageUploadView(APIView):
@@ -179,6 +186,9 @@ class RestDayView(APIView):
         if RestDay.objects.filter(user=request.user, date__gte=week_start, date__lte=week_end).exists():
             return Response({'error': 'Ya usaste tu día de descanso esta semana'}, status=status.HTTP_400_BAD_REQUEST)
 
+        if Challenge.objects.filter(start_date__date__lte=today, end_date__date__gte=today, active=True).exists():
+            return Response({'error': 'No puedes usar descanso cuando hay un reto activo ese día'}, status=status.HTTP_400_BAD_REQUEST)
+
         dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
         if dp.is_rest_day:
             return Response({'error': 'Hoy ya es tu día de descanso'}, status=status.HTTP_400_BAD_REQUEST)
@@ -188,29 +198,10 @@ class RestDayView(APIView):
 
         RestDay.objects.create(user=request.user, date=today)
 
-        active_challenges = Challenge.objects.filter(
-            start_date__date__lte=today,
-            end_date__date__gte=today,
-            active=True
-        )
-        awarded = []
-        for c in active_challenges:
-            if not ChallengeSubmission.objects.filter(user=request.user, challenge=c, status='approved').exists():
-                ChallengeSubmission.objects.create(
-                    user=request.user,
-                    challenge=c,
-                    status='approved',
-                    points_awarded=c.points,
-                    review_comment='Día de descanso'
-                )
-                Medal.objects.get_or_create(user=request.user, challenge=c)
-                awarded.append({'challenge': c.title, 'points': c.points})
-
         return Response({
             'ok': True,
             'message': 'Día de descanso registrado. ¡Descansa!',
             'dailyPoints': dp.points,
-            'challengeAwards': awarded
         })
 
 class CompetitionPeriodView(APIView):
