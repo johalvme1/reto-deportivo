@@ -10,11 +10,13 @@ function authHeaders() {
 }
 
 async function request(url, options = {}) {
+  const isFormData = options.body instanceof FormData;
+  const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
   const res = await fetch(`${API}${url}`, {
     ...options,
     cache: 'no-store',
     headers: {
-      'Content-Type': 'application/json',
+      ...defaultHeaders,
       ...authHeaders(),
       ...options.headers
     }
