@@ -245,12 +245,18 @@ class CompetitionPeriodAdminView(APIView):
 
 class MeasurementView(APIView):
     def get(self, request):
-        measurements = Measurement.objects.filter(user=request.user).order_by('-date')[:30]
+        user_id = request.query_params.get('user_id')
+        if user_id:
+            measurements = Measurement.objects.filter(user_id=user_id).order_by('-date')[:30]
+        else:
+            measurements = Measurement.objects.select_related('user').order_by('-date')[:100]
         data = []
         for m in measurements:
             data.append({
                 'id': m.id,
                 'date': m.date.isoformat(),
+                'user_id': m.user_id,
+                'user_name': m.user.name or m.user.username,
                 'peso': float(m.peso) if m.peso is not None else None,
                 'grasa': float(m.grasa) if m.grasa is not None else None,
                 'musculo': float(m.musculo) if m.musculo is not None else None,
@@ -276,6 +282,8 @@ class MeasurementView(APIView):
         return Response({
             'id': m.id,
             'date': m.date.isoformat(),
+            'user_id': m.user_id,
+            'user_name': m.user.name or m.user.username,
             'peso': float(m.peso) if m.peso is not None else None,
             'grasa': float(m.grasa) if m.grasa is not None else None,
             'musculo': float(m.musculo) if m.musculo is not None else None,
