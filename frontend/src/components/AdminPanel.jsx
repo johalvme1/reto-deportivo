@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions, getUsers, deleteUser, requestPasswordReset, getCompetitionPeriod, setCompetitionPeriod } from '../api';
+import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions, getUsers, deleteUser, requestPasswordReset, getCompetitionPeriod, setCompetitionPeriod, wipeAllData } from '../api';
 import { useAuth } from '../context/AuthContext';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
@@ -396,6 +396,8 @@ export default function AdminPanel() {
   const [periodEnd, setPeriodEnd] = useState('');
   const [periodMsg, setPeriodMsg] = useState('');
   const [periodErr, setPeriodErr] = useState('');
+  const [wiping, setWiping] = useState(false);
+  const [wipeStep, setWipeStep] = useState(0);
 
   useEffect(() => {
     getCompetitionPeriod().then(p => {
@@ -412,6 +414,24 @@ export default function AdminPanel() {
       setPeriod({ active: true, start_date: res.start_date, end_date: res.end_date });
       setPeriodMsg('Periodo de competencia actualizado');
     } catch (err) { setPeriodErr(err.message); }
+  };
+
+  const handleWipe = async () => {
+    if (wipeStep === 0) {
+      setWipeStep(1);
+      return;
+    }
+    if (wipeStep === 1) {
+      setWipeStep(2);
+      return;
+    }
+    setWiping(true);
+    try {
+      await wipeAllData();
+      alert('Todo ha sido borrado. La app se recargará.');
+      window.location.href = '/';
+    } catch (err) { alert(err.message); }
+    finally { setWiping(false); setWipeStep(0); }
   };
 
   return (
@@ -467,6 +487,52 @@ export default function AdminPanel() {
           </div>
           {periodMsg && <div style={{ marginTop: 8, color: '#0d5c43', fontSize: '0.85rem' }}>✓ {periodMsg}</div>}
           {periodErr && <div style={{ marginTop: 8, color: '#ef476f', fontSize: '0.85rem' }}>{periodErr}</div>}
+        </div>
+      )}
+      {tab === 'config' && (
+        <div style={{ marginTop: 32, paddingTop: 20, borderTop: '2px solid #ef476f' }}>
+          <h2 style={{ color: '#ef476f' }}>⚠ Zona de Peligro</h2>
+          <p style={{ fontSize: '0.85rem', color: '#8a5f96', marginBottom: 12 }}>
+            Esta acción borrará <strong>TODO</strong>: base de datos, usuarios (excepto tú), fotos, evidencias, retos, puntos, medidas, mensajes y archivos. No se puede deshacer.
+          </p>
+          {wipeStep === 0 && (
+            <button className="btn btn-danger" onClick={handleWipe}>
+              🗑 Borrar todo
+            </button>
+          )}
+          {wipeStep === 1 && (
+            <div style={{ padding: 14, background: '#fff3cd', border: '1px solid #f0d48a', borderRadius: 10 }}>
+              <strong style={{ color: '#8a6d1a' }}>⚠ ¿Estás seguro?</strong>
+              <p style={{ fontSize: '0.82rem', color: '#8a6d1a', margin: '6px 0' }}>
+                Se borrarán todos los datos de la aplicación permanentemente.
+              </p>
+              <button className="btn btn-danger btn-sm" onClick={handleWipe}>Sí, estoy seguro</button>
+              <button className="btn btn-sm" style={{ marginLeft: 6 }} onClick={() => setWipeStep(0)}>Cancelar</button>
+            </div>
+          )}
+          {wipeStep === 2 && (
+            <div style={{ padding: 14, background: '#fde8e8', border: '2px solid #ef476f', borderRadius: 10 }}>
+              <strong style={{ color: '#ef476f' }}>🚨 Última advertencia</strong>
+              <p style={{ fontSize: '0.82rem', color: '#ef476f', margin: '6px 0' }}>
+                Esto es <strong>IRREVERSIBLE</strong>. Escribe "BORRAR" para confirmar.
+              </p>
+              <input
+                id="wipe-confirm-input"
+                type="text"
+                placeholder='Escribe "BORRAR"'
+                style={{ marginBottom: 8, width: 200 }}
+              />
+              <br />
+              <button className="btn btn-danger btn-sm" onClick={() => {
+                const val = document.getElementById('wipe-confirm-input')?.value;
+                if (val === 'BORRAR') handleWipe();
+                else alert('Debes escribir BORRAR exactamente');
+              }} disabled={wiping}>
+                {wiping ? 'Borrando...' : '🗑 Borrar todo para siempre'}
+              </button>
+              <button className="btn btn-sm" style={{ marginLeft: 6 }} onClick={() => setWipeStep(0)}>Cancelar</button>
+            </div>
+          )}
         </div>
       )}
     </div>

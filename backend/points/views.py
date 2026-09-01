@@ -336,3 +336,47 @@ class MeasurementView(APIView):
             'musculo': float(m.musculo) if m.musculo is not None else None,
             'photo': m.photo.url if m.photo else None,
         })
+
+
+class DangerZoneWipeView(APIView):
+    def post(self, request):
+        from accounts.permissions import is_supervisor_user
+        if not is_supervisor_user(request.user):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        confirm = request.data.get('confirm')
+        if confirm != 'BORRAR_TODO':
+            return Response({'error': 'Envía confirm: "BORRAR_TODO"'}, status=status.HTTP_400_BAD_REQUEST)
+
+        import shutil
+        from django.conf import settings
+        from points.models import DailyPoint, RestDay, CompetitionPeriod, Measurement
+        from challenges.models import Challenge, ChallengeSubmission, Medal, ChallengeCompletion, ChallengeExpiryNotice
+        from activities.models import Activity
+        from sports.models import Sport
+        from chat.models import ChatMessage
+        from uploads.models import PendingUpload
+
+        ChallengeCompletion.objects.all().delete()
+        ChallengeExpiryNotice.objects.all().delete()
+        ChallengeSubmission.objects.all().delete()
+        Medal.objects.all().delete()
+        Challenge.objects.all().delete()
+        DailyPoint.objects.all().delete()
+        RestDay.objects.all().delete()
+        CompetitionPeriod.objects.all().delete()
+        Measurement.objects.all().delete()
+        Activity.objects.all().delete()
+        Sport.objects.all().delete()
+        ChatMessage.objects.all().delete()
+        PendingUpload.objects.all().delete()
+
+        User = get_user_model()
+        User.objects.filter(is_superuser=False).delete()
+
+        for folder in ['uploads', 'steps', 'measurements', 'challenges', 'pending']:
+            path = settings.MEDIA_ROOT / folder
+            if path.exists():
+                shutil.rmtree(path, ignore_errors=True)
+
+        return Response({'ok': True, 'message': 'Base de datos y archivos borrados completamente'})

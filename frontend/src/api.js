@@ -405,3 +405,10 @@ export function saveMeasurement(data) {
     body: isFormData ? data : JSON.stringify(data)
   });
 }
+
+export function wipeAllData() {
+  return request('/points/danger-zone/wipe/', {
+    method: 'POST',
+    body: JSON.stringify({ confirm: 'BORRAR_TODO' })
+  });
+}
