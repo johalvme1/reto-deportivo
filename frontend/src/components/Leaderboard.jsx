@@ -30,6 +30,7 @@ export default function Leaderboard() {
             <li key={p.id} className="leaderboard-item">
               <div className={`leaderboard-rank ${rankClass(i)}`}>{i + 1}</div>
               <span className="leaderboard-name">{p.name}</span>
+              <span className="leaderboard-steps">👟 {p.total_steps?.toLocaleString('es') || 0}</span>
               <span className="leaderboard-points">{p.total_points} pts</span>
             </li>
           ))}

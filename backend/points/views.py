@@ -151,6 +151,7 @@ class LeaderboardView(APIView):
                 filter=Q(steps__isnull=False) & Q(steps_image__isnull=False),
             ),
             activity_count=Count('pk', filter=Q(activity__isnull=False)),
+            total_steps=Sum('steps', filter=Q(steps__isnull=False)),
         )
         daily_map = {entry['user']: entry for entry in daily_agg}
 
@@ -171,7 +172,8 @@ class LeaderboardView(APIView):
                 'id': user.id,
                 'name': user.name or user.username,
                 'avatar': user.avatar.url if user.avatar else None,
-                'total_points': total
+                'total_points': total,
+                'total_steps': int(d.get('total_steps', 0) or 0)
             })
 
         leaderboard.sort(key=lambda e: e['total_points'], reverse=True)

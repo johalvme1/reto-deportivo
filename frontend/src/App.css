@@ -419,6 +419,7 @@ textarea { resize: vertical; min-height: 80px; }
 
 .leaderboard-name { flex: 1; font-weight: 600; }
 .leaderboard-points { font-weight: 700; background: linear-gradient(135deg, #f78ec6, #a8a1f0); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.1rem; }
+.leaderboard-steps { font-weight: 600; color: #8a5f96; font-size: 0.9rem; margin-right: 12px; }
 
 .evidence-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 16px; }
 .evidence-item {
