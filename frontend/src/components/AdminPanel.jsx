@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions, getUsers, deleteUser, requestPasswordReset } from '../api';
+import { getChallenges, createChallenge, updateChallenge, getChallengeSubmissions, reviewSubmission, getPendingUsers, reviewUser, approveUserSubmissions, getPendingCompletions, getUsers, deleteUser, requestPasswordReset, getCompetitionPeriod, setCompetitionPeriod } from '../api';
 import { useAuth } from '../context/AuthContext';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
@@ -391,6 +391,29 @@ function ChallengeManager() {
 
 export default function AdminPanel() {
   const [tab, setTab] = useState('gestion');
+  const [period, setPeriod] = useState(null);
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
+  const [periodMsg, setPeriodMsg] = useState('');
+  const [periodErr, setPeriodErr] = useState('');
+
+  useEffect(() => {
+    getCompetitionPeriod().then(p => {
+      setPeriod(p);
+      if (p.start_date) setPeriodStart(p.start_date);
+      if (p.end_date) setPeriodEnd(p.end_date);
+    }).catch(() => {});
+  }, []);
+
+  const handleSavePeriod = async () => {
+    setPeriodMsg(''); setPeriodErr('');
+    try {
+      const res = await setCompetitionPeriod(periodStart, periodEnd);
+      setPeriod({ active: true, start_date: res.start_date, end_date: res.end_date });
+      setPeriodMsg('Periodo de competencia actualizado');
+    } catch (err) { setPeriodErr(err.message); }
+  };
+
   return (
     <div className="card">
       <h1>Panel de Administración</h1>
@@ -407,8 +430,45 @@ export default function AdminPanel() {
         >
           Dashboard
         </button>
+        <button
+          className={`admin-tab ${tab === 'config' ? 'active' : ''}`}
+          onClick={() => setTab('config')}
+        >
+          Configuración
+        </button>
       </div>
-      {tab === 'gestion' ? <ChallengeManager /> : <SupervisorDashboard />}
+      {tab === 'gestion' && <ChallengeManager />}
+      {tab === 'dashboard' && <SupervisorDashboard />}
+      {tab === 'config' && (
+        <div style={{ marginTop: 16 }}>
+          <h2>Periodo de Competencia</h2>
+          <p style={{ fontSize: '0.85rem', color: '#b088c0', marginBottom: 12 }}>
+            Define cuándo inicia y termina la competencia general. Los participantes acumulan puntos dentro de este periodo.
+          </p>
+          {period?.active && (
+            <div style={{ padding: '10px 14px', background: '#e6ffe9', border: '1px solid #c8e6c9', borderRadius: 8, marginBottom: 12, fontSize: '0.85rem', color: '#0d5c43' }}>
+              Periodo activo: {period.start_date} al {period.end_date}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 8 }}>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Inicio</label>
+              <input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)}
+                style={{ display: 'block', marginTop: 4 }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Fin</label>
+              <input type="date" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)}
+                style={{ display: 'block', marginTop: 4 }} />
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={handleSavePeriod} disabled={!periodStart || !periodEnd}>
+              Guardar
+            </button>
+          </div>
+          {periodMsg && <div style={{ marginTop: 8, color: '#0d5c43', fontSize: '0.85rem' }}>✓ {periodMsg}</div>}
+          {periodErr && <div style={{ marginTop: 8, color: '#ef476f', fontSize: '0.85rem' }}>{periodErr}</div>}
+        </div>
+      )}
     </div>
   );
 }

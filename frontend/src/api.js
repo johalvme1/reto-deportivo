@@ -376,3 +376,18 @@ export function markChatRead(lastReadId) {
 export function getUnreadCount() {
   return request('/chat/unread/');
 }
+
+export function markRestDay() {
+  return request('/points/rest-day/', { method: 'POST' });
+}
+
+export function getCompetitionPeriod() {
+  return request('/points/competition-period/');
+}
+
+export function setCompetitionPeriod(startDate, endDate) {
+  return request('/points/competition-period/admin/', {
+    method: 'POST',
+    body: JSON.stringify({ start_date: startDate, end_date: endDate })
+  });
+}

@@ -4,10 +4,10 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from django.db.models import Count, Q
-from .models import DailyPoint
+from .models import DailyPoint, RestDay, CompetitionPeriod
 from .serializers import DailyPointSerializer
 from activities.models import Activity
-from challenges.models import ChallengeSubmission
+from challenges.models import ChallengeSubmission, Challenge, Medal
 from django.contrib.auth import get_user_model
 from uploads.views import claim_pending, resolve_field
 
@@ -21,13 +21,22 @@ class TodayPointsView(APIView):
             dp.points for dp in DailyPoint.objects.filter(user=request.user, date__gte=week_ago)
         )
 
+        has_rest_today = RestDay.objects.filter(user=request.user, date=today).exists()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+        has_rest_this_week = RestDay.objects.filter(
+            user=request.user, date__gte=week_start, date__lte=week_end
+        ).exists()
+
         serializer = DailyPointSerializer(dp) if dp else None
         return Response({
             'date': today.isoformat(),
             'todayPoints': dp.points if dp else 0,
             'weeklyPoints': weekly_points,
             'maxToday': 3,
-            'dailyPoint': serializer.data if serializer else None
+            'dailyPoint': serializer.data if serializer else None,
+            'hasRestToday': has_rest_today,
+            'hasRestThisWeek': has_rest_this_week,
         })
 
 class ImageUploadView(APIView):
@@ -160,3 +169,83 @@ class LeaderboardView(APIView):
 
         leaderboard.sort(key=lambda e: e['total_points'], reverse=True)
         return Response(leaderboard)
+
+class RestDayView(APIView):
+    def post(self, request):
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+
+        if RestDay.objects.filter(user=request.user, date__gte=week_start, date__lte=week_end).exists():
+            return Response({'error': 'Ya usaste tu día de descanso esta semana'}, status=status.HTTP_400_BAD_REQUEST)
+
+        dp, created = DailyPoint.objects.get_or_create(user=request.user, date=today)
+        if dp.is_rest_day:
+            return Response({'error': 'Hoy ya es tu día de descanso'}, status=status.HTTP_400_BAD_REQUEST)
+
+        dp.is_rest_day = True
+        dp.save()
+
+        RestDay.objects.create(user=request.user, date=today)
+
+        active_challenges = Challenge.objects.filter(
+            start_date__date__lte=today,
+            end_date__date__gte=today,
+            active=True
+        )
+        awarded = []
+        for c in active_challenges:
+            if not ChallengeSubmission.objects.filter(user=request.user, challenge=c, status='approved').exists():
+                ChallengeSubmission.objects.create(
+                    user=request.user,
+                    challenge=c,
+                    status='approved',
+                    points_awarded=c.points,
+                    review_comment='Día de descanso'
+                )
+                Medal.objects.get_or_create(user=request.user, challenge=c)
+                awarded.append({'challenge': c.title, 'points': c.points})
+
+        return Response({
+            'ok': True,
+            'message': 'Día de descanso registrado. ¡Descansa!',
+            'dailyPoints': dp.points,
+            'challengeAwards': awarded
+        })
+
+class CompetitionPeriodView(APIView):
+    def get(self, request):
+        period = CompetitionPeriod.current()
+        if not period:
+            return Response({'active': False, 'message': 'Sin periodo definido'})
+        today = date.today()
+        is_active = period.start_date <= today <= period.end_date
+        return Response({
+            'active': is_active,
+            'start_date': period.start_date.isoformat(),
+            'end_date': period.end_date.isoformat(),
+        })
+
+class CompetitionPeriodAdminView(APIView):
+    def post(self, request):
+        from accounts.permissions import is_supervisor_user
+        if not is_supervisor_user(request.user):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        start = request.data.get('start_date')
+        end = request.data.get('end_date')
+        if not start or not end:
+            return Response({'error': 'Fechas requeridas'}, status=status.HTTP_400_BAD_REQUEST)
+
+        period = CompetitionPeriod.objects.create(
+            start_date=start,
+            end_date=end,
+            is_active=True
+        )
+        CompetitionPeriod.objects.exclude(id=period.id).update(is_active=False)
+
+        return Response({
+            'ok': True,
+            'start_date': period.start_date.isoformat(),
+            'end_date': period.end_date.isoformat(),
+        })

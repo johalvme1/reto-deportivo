@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getUnreadCount, completeChallenge } from '../api';
+import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getUnreadCount, completeChallenge, markRestDay } from '../api';
 import DonutProgress from './DonutProgress';
 
 function fmtCountdown(ms) {
@@ -157,6 +157,16 @@ export default function Dashboard() {
     } catch (err) { setError(err.message); }
   };
 
+  const handleRestDay = async () => {
+    if (!confirm('¿Usar tu día de descanso de hoy?')) return;
+    setError(''); setSuccess('');
+    try {
+      const res = await markRestDay();
+      setSuccess(res.message || 'Día de descanso registrado');
+      loadData();
+    } catch (err) { setError(err.message); }
+  };
+
   const dp = data?.dailyPoint;
   const visibleChallenges = challenges.filter(c => !c.hidden);
 
@@ -187,6 +197,27 @@ export default function Dashboard() {
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+
+      {!data?.hasRestThisWeek && !data?.hasRestToday && (
+        <div className="card" style={{ background: 'linear-gradient(135deg, #e8f5e9, #f1f8e9)', border: '1px solid #c8e6c9' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <strong style={{ color: '#2e7d32' }}>Día de descanso disponible</strong>
+              <div style={{ fontSize: '0.8rem', color: '#558b2f' }}>Una vez por semana. Se otorgan los puntos del día.</div>
+            </div>
+            <button className="btn btn-success btn-sm" onClick={handleRestDay}>
+              Usar descanso
+            </button>
+          </div>
+        </div>
+      )}
+
+      {data?.hasRestToday && (
+        <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <strong>Día de descanso ✓</strong>
+          <span>Descansa, tus puntos se asignaron automáticamente</span>
+        </div>
+      )}
 
       {(dp?.image || dp?.video) && dp?.steps && dp?.steps_image && dp?.activity && (
         <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
