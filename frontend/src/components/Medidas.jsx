@@ -14,6 +14,7 @@ export default function Medidas() {
   const [photo, setPhoto] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     try {
@@ -34,11 +35,13 @@ export default function Medidas() {
   useEffect(() => { load(); }, [selectedUser]);
 
   const handleSave = async () => {
+    if (saving) return;
     setError(''); setSuccess('');
     if (!peso && !grasaCorporal && !grasaVisceral && !musculo && !photo) {
       setError('Ingresa al menos una medida o foto');
       return;
     }
+    setSaving(true);
     try {
       const formData = new FormData();
       if (peso) formData.append('peso', parseFloat(peso));
@@ -51,6 +54,7 @@ export default function Medidas() {
       setPeso(''); setGrasaCorporal(''); setGrasaVisceral(''); setMusculo(''); setPhoto(null);
       load();
     } catch (err) { setError(err.message); }
+    finally { setSaving(false); }
   };
 
   const DiffInline = ({ current, previous }) => {
@@ -126,7 +130,9 @@ export default function Medidas() {
               style={{ display: 'block', marginTop: 4, fontSize: '0.8rem' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button className="btn btn-primary btn-sm" onClick={handleSave}>Guardar</button>
+            <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+              {saving ? 'Guardando...' : 'Guardar'}
+            </button>
           </div>
         </div>
       )}
