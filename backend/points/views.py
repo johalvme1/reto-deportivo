@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from django.db.models import Count, Q
-from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement, MeasurementSchedule
+        from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement, MeasurementSchedule, MeasurementSchedule
 from .serializers import DailyPointSerializer
 from activities.models import Activity
 from challenges.models import ChallengeSubmission, Challenge, Medal
@@ -416,6 +416,7 @@ class DangerZoneWipeView(APIView):
         RestDay.objects.all().delete()
         CompetitionPeriod.objects.all().delete()
         Measurement.objects.all().delete()
+        MeasurementSchedule.objects.all().delete()
         Activity.objects.all().delete()
         Sport.objects.all().delete()
         ChatMessage.objects.all().delete()
