@@ -276,6 +276,13 @@ export default function Dashboard() {
         </div>
       )}
 
+      {data?.hasRestThisWeek && !data?.hasRestToday && (
+        <div className="card" style={{ background: 'linear-gradient(135deg, #e3f2fd, #e1f5fe)', border: '1px solid #bbdefb' }}>
+          <strong style={{ color: '#1565c0' }}>Ya usaste tu día de descanso esta semana</strong>
+          <div style={{ fontSize: '0.8rem', color: '#0d47a1', marginTop: 4 }}>Solo se permite 1 día de descanso por semana. Vuelve a intentarlo la próxima semana.</div>
+        </div>
+      )}
+
       {(dp?.image || dp?.video) && dp?.steps && dp?.steps_image && dp?.activity && (
         <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong>Día completado</strong>
