@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from django.db.models import Count, Q
-        from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement, MeasurementSchedule, MeasurementSchedule
+from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement, MeasurementSchedule
 from .serializers import DailyPointSerializer
 from activities.models import Activity
 from challenges.models import ChallengeSubmission, Challenge, Medal
