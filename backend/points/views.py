@@ -29,11 +29,11 @@ class TodayPointsView(APIView):
             user=request.user, date__gte=week_start, date__lte=week_end
         ).exists()
 
-        active_challenge = Challenge.objects.filter(
-            start_date__date__lte=today,
-            end_date__date__gte=today,
-            active=True
-        ).first()
+        active_challenge = None
+        for c in Challenge.objects.all():
+            if c.effective_active():
+                active_challenge = c
+                break
 
         serializer = DailyPointSerializer(dp) if dp else None
         return Response({
