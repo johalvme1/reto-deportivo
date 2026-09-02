@@ -152,7 +152,7 @@ export default function Dashboard() {
   };
 
   const handleRestDay = async () => {
-    if (!confirm('¿Usar tu día de descanso de hoy?')) return;
+    if (!confirm('Confirmas que deseas usar tu día de descanso el día de hoy')) return;
     setError(''); setSuccess('');
     try {
       const res = await markRestDay();
