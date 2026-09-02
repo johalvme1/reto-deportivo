@@ -11,7 +11,6 @@ import Leaderboard from './components/Leaderboard';
 import Medals from './components/Medals';
 import Medidas from './components/Medidas';
 import EvidenceGallery from './components/EvidenceGallery';
-import Chat from './components/Chat';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -38,7 +37,6 @@ function AppRoutes() {
           <Route path="/medals" element={<ProtectedRoute><Medals /></ProtectedRoute>} />
           <Route path="/medidas" element={<ProtectedRoute><Medidas /></ProtectedRoute>} />
           <Route path="/evidence" element={<ProtectedRoute><EvidenceGallery /></ProtectedRoute>} />
-          <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         </Routes>
       </div>
     </>

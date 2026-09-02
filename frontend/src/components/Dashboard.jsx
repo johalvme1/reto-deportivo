@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getUnreadCount, completeChallenge, markRestDay, uploadAvatar } from '../api';
+import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, completeChallenge, markRestDay, uploadAvatar } from '../api';
 import DonutProgress from './DonutProgress';
 
 function fmtCountdown(ms) {
@@ -33,7 +33,6 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [now, setNow] = useState(Date.now());
-  const [unread, setUnread] = useState(0);
   const [uploads, setUploads] = useState({});
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileRef = useRef();
@@ -43,13 +42,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    const poll = () => getUnreadCount().then(r => setUnread(r.unread_count)).catch(() => {});
-    poll();
-    const t = setInterval(poll, 5000);
     return () => clearInterval(t);
   }, []);
 
@@ -222,9 +214,6 @@ export default function Dashboard() {
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <h1 style={{ margin: 0 }}>Bienvenido, {user.name || user.username}!</h1>
-              <Link to="/chat" className="chat-link">
-                💬 Chat{unread > 0 && <span className="chat-unread-badge">{unread}</span>}
-              </Link>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#b088c0', margin: '4px 0 0' }}>Haz clic en la foto para cambiar tu avatar</p>
           </div>
