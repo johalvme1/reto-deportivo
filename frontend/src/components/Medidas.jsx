@@ -40,8 +40,8 @@ export default function Medidas() {
   const handleSave = async () => {
     if (saving) return;
     setError(''); setSuccess('');
-    if (!peso && !grasaCorporal && !grasaVisceral && !musculo && !photo) {
-      setError('Ingresa al menos una medida o foto');
+    if (!peso || !grasaCorporal || !grasaVisceral || !musculo) {
+      setError('Todos los campos son obligatorios');
       return;
     }
     setSaving(true);
@@ -135,22 +135,22 @@ export default function Medidas() {
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Peso (kg)</label>
             <input type="number" step="0.01" value={peso} onChange={e => setPeso(e.target.value)}
-              placeholder="Ej: 70.5" style={{ display: 'block', marginTop: 4, width: 110 }} />
+              placeholder="Ej: 70.5" required style={{ display: 'block', marginTop: 4, width: 110 }} />
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa corporal (%)</label>
             <input type="number" step="0.01" value={grasaCorporal} onChange={e => setGrasaCorporal(e.target.value)}
-              placeholder="Ej: 22.5" style={{ display: 'block', marginTop: 4, width: 110 }} />
+              placeholder="Ej: 22.5" required style={{ display: 'block', marginTop: 4, width: 110 }} />
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa visceral</label>
             <input type="number" step="0.01" value={grasaVisceral} onChange={e => setGrasaVisceral(e.target.value)}
-              placeholder="Ej: 8" style={{ display: 'block', marginTop: 4, width: 110 }} />
+              placeholder="Ej: 8" required style={{ display: 'block', marginTop: 4, width: 110 }} />
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Músculo (kg)</label>
             <input type="number" step="0.01" value={musculo} onChange={e => setMusculo(e.target.value)}
-              placeholder="Ej: 35.2" style={{ display: 'block', marginTop: 4, width: 110 }} />
+              placeholder="Ej: 35.2" required style={{ display: 'block', marginTop: 4, width: 110 }} />
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Foto</label>

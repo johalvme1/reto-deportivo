@@ -315,8 +315,8 @@ class MeasurementView(APIView):
         musculo = request.data.get('musculo')
         photo = request.FILES.get('photo')
 
-        if peso is None and grasa_corporal is None and grasa_visceral is None and musculo is None and not photo:
-            return Response({'error': 'Ingresa al menos una medida o foto'}, status=status.HTTP_400_BAD_REQUEST)
+        if peso is None or grasa_corporal is None or grasa_visceral is None or musculo is None:
+            return Response({'error': 'Todos los campos son obligatorios (peso, grasa corporal, grasa visceral, músculo)'}, status=status.HTTP_400_BAD_REQUEST)
 
         m = Measurement(user=request.user, date=today)
         if peso is not None: m.peso = peso
