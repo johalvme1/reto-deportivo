@@ -262,6 +262,13 @@ export default function Dashboard() {
         </div>
       )}
 
+      {data?.hasActiveChallenge && !data?.hasRestThisWeek && !data?.hasRestToday && (
+        <div className="card" style={{ background: 'linear-gradient(135deg, #fff3e0, #fff8e1)', border: '1px solid #ffe0b2' }}>
+          <strong style={{ color: '#e65100' }}>Día de descanso deshabilitado por el reto "{data.activeChallengeName}"</strong>
+          <div style={{ fontSize: '0.8rem', color: '#bf360c', marginTop: 4 }}>No puedes tomar descanso mientras estás en un reto activo.</div>
+        </div>
+      )}
+
       {data?.hasRestToday && (
         <div className="alert alert-success" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <strong>Día de descanso ✓</strong>

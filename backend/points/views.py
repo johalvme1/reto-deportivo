@@ -29,11 +29,11 @@ class TodayPointsView(APIView):
             user=request.user, date__gte=week_start, date__lte=week_end
         ).exists()
 
-        has_active_challenge = Challenge.objects.filter(
+        active_challenge = Challenge.objects.filter(
             start_date__date__lte=today,
             end_date__date__gte=today,
             active=True
-        ).exists()
+        ).first()
 
         serializer = DailyPointSerializer(dp) if dp else None
         return Response({
@@ -44,7 +44,8 @@ class TodayPointsView(APIView):
             'dailyPoint': serializer.data if dp else None,
             'hasRestToday': has_rest_today,
             'hasRestThisWeek': has_rest_this_week,
-            'hasActiveChallenge': has_active_challenge,
+            'hasActiveChallenge': active_challenge is not None,
+            'activeChallengeName': active_challenge.title if active_challenge else None,
         })
 
 class ImageUploadView(APIView):
