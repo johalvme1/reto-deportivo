@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getUnreadCount, completeChallenge, markRestDay } from '../api';
+import { getTodayPoints, uploadDailyEvidence, submitSteps, submitActivity, getActivities, createActivity, getHistory, getChallenges, submitChallengeEvidence, getUnreadCount, completeChallenge, markRestDay, uploadAvatar } from '../api';
 import DonutProgress from './DonutProgress';
 
 function fmtCountdown(ms) {
@@ -17,7 +17,7 @@ function fmtCountdown(ms) {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [data, setData] = useState(null);
   const [activities, setActivities] = useState([]);
   const [history, setHistory] = useState([]);
@@ -35,9 +35,11 @@ export default function Dashboard() {
   const [now, setNow] = useState(Date.now());
   const [unread, setUnread] = useState(0);
   const [uploads, setUploads] = useState({});
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const fileRef = useRef();
   const stepsFileRef = useRef();
   const evidenceFileRef = useRef();
+  const avatarFileRef = useRef();
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -167,17 +169,65 @@ export default function Dashboard() {
     } catch (err) { setError(err.message); }
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La imagen no puede superar 5MB');
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const res = await uploadAvatar(file);
+      updateUser({ avatar: res.avatar });
+      setSuccess('Foto de perfil actualizada');
+    } catch (err) { setError(err.message); }
+    finally { setUploadingAvatar(false); if (avatarFileRef.current) avatarFileRef.current.value = ''; }
+  };
+
   const dp = data?.dailyPoint;
   const visibleChallenges = challenges.filter(c => !c.hidden);
 
   return (
     <div>
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <h1>Bienvenido, {user.name || user.username}!</h1>
-          <Link to="/chat" className="chat-link">
-            💬 Chat{unread > 0 && <span className="chat-unread-badge">{unread}</span>}
-          </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div
+            onClick={() => !uploadingAvatar && avatarFileRef.current?.click()}
+            style={{
+              width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
+              border: '3px solid #d9629f', cursor: 'pointer', flexShrink: 0,
+              background: 'linear-gradient(135deg, #fdeef6, #f3e7fa)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative'
+            }}
+          >
+            {user.avatar ? (
+              <img src={user.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: '1.8rem', color: '#d9629f' }}>
+                {(user.name || user.username || '').charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              background: 'rgba(217,98,159,0.85)', color: '#fff',
+              fontSize: '0.6rem', textAlign: 'center', padding: '2px 0'
+            }}>
+              {uploadingAvatar ? '...' : '📷'}
+            </div>
+          </div>
+          <input ref={avatarFileRef} type="file" accept="image/*" onChange={handleAvatarUpload}
+            style={{ display: 'none' }} />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <h1 style={{ margin: 0 }}>Bienvenido, {user.name || user.username}!</h1>
+              <Link to="/chat" className="chat-link">
+                💬 Chat{unread > 0 && <span className="chat-unread-badge">{unread}</span>}
+              </Link>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#b088c0', margin: '4px 0 0' }}>Haz clic en la foto para cambiar tu avatar</p>
+          </div>
         </div>
         <div className="points-summary">
           <div className="points-summary-item">

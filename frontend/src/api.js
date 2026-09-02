@@ -184,6 +184,15 @@ export function updateProfile(data) {
   });
 }
 
+export function uploadAvatar(file) {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  return request('/auth/profile/', {
+    method: 'PUT',
+    body: formData
+  });
+}
+
 export function getSports() {
   return request('/sports/');
 }
