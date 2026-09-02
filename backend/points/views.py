@@ -337,6 +337,33 @@ class MeasurementView(APIView):
             'photo': m.photo.url if m.photo else None,
         })
 
+    def put(self, request):
+        measurement_id = request.query_params.get('id')
+        if not measurement_id:
+            return Response({'error': 'Falta id'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            m = Measurement.objects.get(id=measurement_id, user=request.user)
+        except Measurement.DoesNotExist:
+            return Response({'error': 'No encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        photo = request.FILES.get('photo')
+        if photo:
+            m.photo = photo
+            m.save(update_fields=['photo'])
+
+        return Response({
+            'id': m.id,
+            'date': m.date.isoformat(),
+            'created_at': m.created_at.isoformat(),
+            'user_id': m.user_id,
+            'user_name': m.user.name or m.user.username,
+            'peso': float(m.peso) if m.peso is not None else None,
+            'grasa_corporal': float(m.grasa_corporal) if m.grasa_corporal is not None else None,
+            'grasa_visceral': float(m.grasa_visceral) if m.grasa_visceral is not None else None,
+            'musculo': float(m.musculo) if m.musculo is not None else None,
+            'photo': m.photo.url if m.photo else None,
+        })
+
 
 class DangerZoneWipeView(APIView):
     def post(self, request):

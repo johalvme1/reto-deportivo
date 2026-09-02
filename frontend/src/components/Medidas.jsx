@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getMeasurements, saveMeasurement } from '../api';
+import { getMeasurements, saveMeasurement, updateMeasurementPhoto } from '../api';
 
 export default function Medidas() {
   const { user } = useAuth();
@@ -15,6 +15,8 @@ export default function Medidas() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editingPhotoId, setEditingPhotoId] = useState(null);
+  const photoEditRef = useRef(null);
 
   const load = async () => {
     try {
@@ -55,6 +57,29 @@ export default function Medidas() {
       load();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
+  };
+
+  const handleEditPhoto = (id) => {
+    setEditingPhotoId(id);
+    photoEditRef.current?.click();
+  };
+
+  const handlePhotoEditSave = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingPhotoId) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La imagen no puede superar 5MB');
+      return;
+    }
+    try {
+      await updateMeasurementPhoto(editingPhotoId, file);
+      setSuccess('Foto actualizada');
+      load();
+    } catch (err) { setError(err.message); }
+    finally {
+      setEditingPhotoId(null);
+      if (photoEditRef.current) photoEditRef.current.value = '';
+    }
   };
 
   const DiffInline = ({ current, previous }) => {
@@ -137,6 +162,8 @@ export default function Medidas() {
         </div>
       )}
 
+      <input ref={photoEditRef} type="file" accept="image/*" onChange={handlePhotoEditSave} style={{ display: 'none' }} />
+
       {Object.keys(grouped).length > 0 ? (
         Object.entries(grouped).map(([uid, { name, items }]) => (
           <div key={uid} style={{ marginBottom: 24 }}>
@@ -188,8 +215,24 @@ export default function Medidas() {
                         </td>
                         <td style={tdStyle}>
                           {m.photo ? (
-                            <a href={m.photo} target="_blank" rel="noopener noreferrer" style={{ color: '#d9629f' }}>📷 Ver</a>
-                          ) : '—'}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <a href={m.photo} target="_blank" rel="noopener noreferrer" style={{ color: '#d9629f' }}>📷 Ver</a>
+                              {m.user_id === user.id && (
+                                <button
+                                  onClick={() => handleEditPhoto(m.id)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#b088c0', padding: 2 }}
+                                  title="Cambiar foto"
+                                >✏️</button>
+                              )}
+                            </div>
+                          ) : (
+                            m.user_id === user.id ? (
+                              <button
+                                onClick={() => handleEditPhoto(m.id)}
+                                style={{ background: 'none', border: '1px dashed #d9629f', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', color: '#d9629f', padding: '4px 8px' }}
+                              >+ Foto</button>
+                            ) : '—'
+                          )}
                         </td>
                       </tr>
                     );

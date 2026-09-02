@@ -421,3 +421,12 @@ export function wipeAllData() {
     body: JSON.stringify({ confirm: 'BORRAR_TODO' })
   });
 }
+
+export function updateMeasurementPhoto(id, file) {
+  const formData = new FormData();
+  formData.append('photo', file);
+  return request(`/points/measurements/?id=${id}`, {
+    method: 'PUT',
+    body: formData
+  });
+}
