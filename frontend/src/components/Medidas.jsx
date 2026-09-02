@@ -7,7 +7,6 @@ export default function Medidas() {
   const [measurements, setMeasurements] = useState([]);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(user.id);
-  const [schedule, setSchedule] = useState(null);
   const [peso, setPeso] = useState('');
   const [grasaCorporal, setGrasaCorporal] = useState('');
   const [grasaVisceral, setGrasaVisceral] = useState('');
@@ -18,19 +17,12 @@ export default function Medidas() {
   const [saving, setSaving] = useState(false);
   const [editingPhotoId, setEditingPhotoId] = useState(null);
   const photoEditRef = useRef(null);
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(t);
-  }, []);
 
   const load = async () => {
     try {
       const res = await getMeasurements(selectedUser === 'all' ? null : selectedUser);
       const data = res.measurements || res;
       setMeasurements(Array.isArray(data) ? data : []);
-      setSchedule(res.schedule || null);
       const uniqueUsers = [];
       const seen = new Set();
       (Array.isArray(data) ? data : []).forEach(m => {
@@ -44,22 +36,6 @@ export default function Medidas() {
   };
 
   useEffect(() => { load(); }, [selectedUser]);
-
-  const canMeasure = () => {
-    if (!schedule || !schedule.next_date) return true;
-    return new Date(now) >= new Date(schedule.next_date + 'T00:00:00');
-  };
-
-  const countdownToNext = () => {
-    if (!schedule || !schedule.next_date) return null;
-    const target = new Date(schedule.next_date + 'T00:00:00').getTime();
-    const diff = target - now;
-    if (diff <= 0) return null;
-    const days = Math.floor(diff / 86400000);
-    const hours = Math.floor((diff % 86400000) / 3600000);
-    if (days > 0) return `${days}d ${hours}h`;
-    return `${hours}h`;
-  };
 
   const handleSave = async () => {
     if (saving) return;
@@ -132,8 +108,6 @@ export default function Medidas() {
   });
 
   const isOwn = selectedUser !== 'all' && selectedUser === user.id;
-  const showForm = isOwn && canMeasure();
-  const countdown = countdownToNext();
 
   return (
     <div className="card">
@@ -156,24 +130,7 @@ export default function Medidas() {
         </select>
       </div>
 
-      {isOwn && schedule && !canMeasure() && (
-        <div style={{
-          padding: '14px 18px', marginBottom: 16, borderRadius: 10,
-          background: 'linear-gradient(135deg, #f0e3f2, #e8d5f0)',
-          border: '1px solid #d9b8e8'
-        }}>
-          <div style={{ fontSize: '0.9rem', color: '#5a3d6a', fontWeight: 600 }}>
-            📅 Próxima medición: <strong>{new Date(schedule.next_date + 'T00:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong>
-          </div>
-          {countdown && (
-            <div style={{ fontSize: '0.8rem', color: '#8a5f96', marginTop: 4 }}>
-              ⏳ Faltan {countdown}
-            </div>
-          )}
-        </div>
-      )}
-
-      {isOwn && canMeasure() && (
+      {isOwn && (
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20, padding: '12px 14px', background: '#faf3fc', borderRadius: 10, border: '1px solid #f1e0f5' }}>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Peso (kg)</label>

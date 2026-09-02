@@ -303,29 +303,11 @@ class MeasurementView(APIView):
                 'photo': m.photo.url if m.photo else None,
             })
 
-        schedule = MeasurementSchedule.objects.filter(user=request.user).first()
-        schedule_data = None
-        if schedule:
-            schedule_data = {
-                'next_date': schedule.next_date.isoformat(),
-                'interval_days': schedule.interval_days,
-            }
-
-        return Response({'measurements': data, 'schedule': schedule_data})
+        return Response({'measurements': data})
 
     def post(self, request):
         from datetime import date as date_type, timedelta
         today = date_type.today()
-
-        schedule, created = MeasurementSchedule.objects.get_or_create(
-            user=request.user,
-            defaults={'next_date': today}
-        )
-
-        if not created and schedule.next_date and today < schedule.next_date:
-            return Response({
-                'error': f'Próxima medición el {schedule.next_date.strftime("%d/%m/%Y")}'
-            }, status=status.HTTP_400_BAD_REQUEST)
 
         peso = request.data.get('peso')
         grasa_corporal = request.data.get('grasa_corporal')
@@ -343,9 +325,6 @@ class MeasurementView(APIView):
         if musculo is not None: m.musculo = musculo
         if photo: m.photo = photo
         m.save()
-
-        schedule.next_date = today + timedelta(days=schedule.interval_days)
-        schedule.save(update_fields=['next_date'])
 
         return Response({
             'id': m.id,
