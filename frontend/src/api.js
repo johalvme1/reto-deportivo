@@ -403,8 +403,9 @@ export function setCompetitionPeriod(startDate, endDate) {
   });
 }
 
-export function getMeasurements() {
-  return request('/points/measurements/');
+export function getMeasurements(userId) {
+  const params = userId ? `?user_id=${userId}` : '';
+  return request(`/points/measurements/${params}`);
 }
 
 export function saveMeasurement(data) {

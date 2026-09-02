@@ -77,3 +77,14 @@ class Measurement(models.Model):
 
     def __str__(self):
         return f'Medidas: {self.user.name or self.user.username} - {self.date}'
+
+
+class MeasurementSchedule(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='measurement_schedule')
+    next_date = models.DateField(help_text='Fecha de la próxima medición')
+    interval_days = models.IntegerField(default=15, help_text='Días entre mediciones')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Schedule: {self.user.name or self.user.username} - próxima: {self.next_date}'

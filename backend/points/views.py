@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from django.db.models import Count, Q
-from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement
+from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement, MeasurementSchedule
 from .serializers import DailyPointSerializer
 from activities.models import Activity
 from challenges.models import ChallengeSubmission, Challenge, Medal
@@ -302,11 +302,31 @@ class MeasurementView(APIView):
                 'musculo': float(m.musculo) if m.musculo is not None else None,
                 'photo': m.photo.url if m.photo else None,
             })
-        return Response(data)
+
+        schedule = MeasurementSchedule.objects.filter(user=request.user).first()
+        schedule_data = None
+        if schedule:
+            schedule_data = {
+                'next_date': schedule.next_date.isoformat(),
+                'interval_days': schedule.interval_days,
+            }
+
+        return Response({'measurements': data, 'schedule': schedule_data})
 
     def post(self, request):
-        from datetime import date as date_type
+        from datetime import date as date_type, timedelta
         today = date_type.today()
+
+        schedule, _ = MeasurementSchedule.objects.get_or_create(
+            user=request.user,
+            defaults={'next_date': today + timedelta(days=15)}
+        )
+
+        if schedule.next_date and today < schedule.next_date:
+            return Response({
+                'error': f'Próxima medición el {schedule.next_date.strftime("%d/%m/%Y")}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         peso = request.data.get('peso')
         grasa_corporal = request.data.get('grasa_corporal')
         grasa_visceral = request.data.get('grasa_visceral')
@@ -323,6 +343,9 @@ class MeasurementView(APIView):
         if musculo is not None: m.musculo = musculo
         if photo: m.photo = photo
         m.save()
+
+        schedule.next_date = today + timedelta(days=schedule.interval_days)
+        schedule.save(update_fields=['next_date'])
 
         return Response({
             'id': m.id,
