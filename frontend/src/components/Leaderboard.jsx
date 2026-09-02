@@ -28,7 +28,13 @@ export default function Leaderboard() {
         <ul className="leaderboard-list">
           {ranking.map((p, i) => (
             <li key={p.id} className="leaderboard-item">
-              <div className={`leaderboard-rank ${rankClass(i)}`}>{i + 1}</div>
+              <div className={`leaderboard-rank ${rankClass(i)}`} style={{ position: 'relative' }}>
+                {p.avatar ? (
+                  <img src={p.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                ) : (
+                  <span>{i + 1}</span>
+                )}
+              </div>
               <span className="leaderboard-name">{p.name}</span>
               <span className="leaderboard-steps">👟 {p.total_steps?.toLocaleString('es') || 0}</span>
               <span className="leaderboard-points">{p.total_points} pts</span>
