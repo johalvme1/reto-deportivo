@@ -24,7 +24,7 @@ export default function Navbar() {
           {user.name || user.username}{' '}
           {user?.role === 'supervisor' && <span className="badge badge-supervisor">Supervisor</span>}
         </span>
-        <button onClick={logout}>Salir</button>
+        <button onClick={() => { if (confirm('Confirmas que deseas cerrar sesión')) logout(); }}>Cerrar Sesión</button>
       </div>
     </nav>
   );
