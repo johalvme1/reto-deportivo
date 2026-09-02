@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('points', '0010_musculo_help_text'),
-        ('accounts', '0005_user_avatar'),
+        ('accounts', '0001_initial'),
     ]
 
     operations = [
