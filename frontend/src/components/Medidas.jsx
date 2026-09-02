@@ -16,6 +16,7 @@ export default function Medidas() {
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingPhotoId, setEditingPhotoId] = useState(null);
+  const [schedule, setSchedule] = useState(null);
   const photoEditRef = useRef(null);
 
   const load = async () => {
@@ -23,6 +24,7 @@ export default function Medidas() {
       const res = await getMeasurements(selectedUser === 'all' ? null : selectedUser);
       const data = res.measurements || res;
       setMeasurements(Array.isArray(data) ? data : []);
+      if (res.schedule) setSchedule(res.schedule);
       const uniqueUsers = [];
       const seen = new Set();
       (Array.isArray(data) ? data : []).forEach(m => {
@@ -119,6 +121,27 @@ export default function Medidas() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {schedule && isOwn && (
+        <div className="card" style={{
+          background: schedule.is_measurement_day
+            ? 'linear-gradient(135deg, #e8f5e9, #f1f8e9)'
+            : 'linear-gradient(135deg, #fff3e0, #fff8e1)',
+          border: schedule.is_measurement_day ? '1px solid #c8e6c9' : '1px solid #ffe0b2',
+          marginBottom: 16
+        }}>
+          <strong style={{ color: schedule.is_measurement_day ? '#2e7d32' : '#e65100' }}>
+            {schedule.is_measurement_day
+              ? 'Hoy es día de medición'
+              : `Próxima medición: ${new Date(schedule.next_date + 'T00:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+          </strong>
+          <div style={{ fontSize: '0.8rem', color: schedule.is_measurement_day ? '#558b2f' : '#bf360c', marginTop: 4 }}>
+            {schedule.is_measurement_day
+              ? 'Puedes registrar tus medidas ahora'
+              : `Las medidas solo se pueden registrar el día de la medición (cada ${schedule.interval_days} días)`}
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: 16 }}>
         <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Ver medidas de:</label>
         <select value={selectedUser} onChange={e => setSelectedUser(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
@@ -135,34 +158,39 @@ export default function Medidas() {
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Peso (kg)</label>
             <input type="number" step="0.01" value={peso} onChange={e => setPeso(e.target.value)}
-              placeholder="Ej: 70.5" required style={{ display: 'block', marginTop: 4, width: 110 }} />
+              placeholder="Ej: 70.5" required style={{ display: 'block', marginTop: 4, width: 110 }}
+              disabled={!schedule?.is_measurement_day} />
             {!peso && <span style={{ fontSize: '0.7rem', color: '#ef476f' }}>Pendiente</span>}
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa corporal (%)</label>
             <input type="number" step="0.01" value={grasaCorporal} onChange={e => setGrasaCorporal(e.target.value)}
-              placeholder="Ej: 22.5" required style={{ display: 'block', marginTop: 4, width: 110 }} />
+              placeholder="Ej: 22.5" required style={{ display: 'block', marginTop: 4, width: 110 }}
+              disabled={!schedule?.is_measurement_day} />
             {!grasaCorporal && <span style={{ fontSize: '0.7rem', color: '#ef476f' }}>Pendiente</span>}
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa visceral</label>
             <input type="number" step="0.01" value={grasaVisceral} onChange={e => setGrasaVisceral(e.target.value)}
-              placeholder="Ej: 8" required style={{ display: 'block', marginTop: 4, width: 110 }} />
+              placeholder="Ej: 8" required style={{ display: 'block', marginTop: 4, width: 110 }}
+              disabled={!schedule?.is_measurement_day} />
             {!grasaVisceral && <span style={{ fontSize: '0.7rem', color: '#ef476f' }}>Pendiente</span>}
           </div>
           <div>
-            <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Músculo (kg)</label>
+            <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Músculo (%)</label>
             <input type="number" step="0.01" value={musculo} onChange={e => setMusculo(e.target.value)}
-              placeholder="Ej: 35.2" required style={{ display: 'block', marginTop: 4, width: 110 }} />
+              placeholder="Ej: 35.2" required style={{ display: 'block', marginTop: 4, width: 110 }}
+              disabled={!schedule?.is_measurement_day} />
             {!musculo && <span style={{ fontSize: '0.7rem', color: '#ef476f' }}>Pendiente</span>}
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Foto</label>
             <input type="file" accept="image/*" onChange={e => setPhoto(e.target.files[0])}
-              style={{ display: 'block', marginTop: 4, fontSize: '0.8rem' }} />
+              style={{ display: 'block', marginTop: 4, fontSize: '0.8rem' }}
+              disabled={!schedule?.is_measurement_day} />
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+            <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || !schedule?.is_measurement_day}>
               {saving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
@@ -183,7 +211,7 @@ export default function Medidas() {
                     <th style={thStyle}>Peso (kg)</th>
                     <th style={thStyle}>Grasa corp. (%)</th>
                     <th style={thStyle}>Grasa vis.</th>
-                    <th style={thStyle}>Músculo (kg)</th>
+                    <th style={thStyle}>Músculo (%)</th>
                     <th style={thStyle}>Foto</th>
                   </tr>
                 </thead>

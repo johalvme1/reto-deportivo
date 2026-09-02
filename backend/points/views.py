@@ -284,6 +284,8 @@ class MeasurementView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
+        from datetime import date as date_type
+        today = date_type.today()
         user_id = request.query_params.get('user_id')
         if user_id:
             measurements = Measurement.objects.filter(user_id=user_id).order_by('-created_at')[:50]
@@ -304,11 +306,32 @@ class MeasurementView(APIView):
                 'photo': m.photo.url if m.photo else None,
             })
 
-        return Response({'measurements': data})
+        schedule, _ = MeasurementSchedule.objects.get_or_create(
+            user=request.user,
+            defaults={'next_date': today, 'interval_days': 15}
+        )
+
+        return Response({
+            'measurements': data,
+            'schedule': {
+                'next_date': schedule.next_date.isoformat(),
+                'interval_days': schedule.interval_days,
+                'is_measurement_day': today == schedule.next_date,
+            }
+        })
 
     def post(self, request):
         from datetime import date as date_type, timedelta
         today = date_type.today()
+
+        schedule, _ = MeasurementSchedule.objects.get_or_create(
+            user=request.user,
+            defaults={'next_date': today, 'interval_days': 15}
+        )
+        if today != schedule.next_date:
+            return Response({
+                'error': f'Solo puedes registrar medidas el día de tu medición. Próxima medición: {schedule.next_date.strftime("%d/%m/%Y")}'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         peso = request.data.get('peso')
         grasa_corporal = request.data.get('grasa_corporal')
@@ -327,6 +350,9 @@ class MeasurementView(APIView):
         if photo: m.photo = photo
         m.save()
 
+        schedule.next_date = today + timedelta(days=schedule.interval_days)
+        schedule.save(update_fields=['next_date'])
+
         return Response({
             'id': m.id,
             'date': m.date.isoformat(),
@@ -338,6 +364,7 @@ class MeasurementView(APIView):
             'grasa_visceral': float(m.grasa_visceral) if m.grasa_visceral is not None else None,
             'musculo': float(m.musculo) if m.musculo is not None else None,
             'photo': m.photo.url if m.photo else None,
+            'next_date': schedule.next_date.isoformat(),
         })
 
     def put(self, request):
