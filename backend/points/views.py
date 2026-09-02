@@ -396,8 +396,6 @@ class DangerZoneWipeView(APIView):
         CompetitionPeriod.objects.all().delete()
         Measurement.objects.all().delete()
         MeasurementSchedule.objects.all().delete()
-        Activity.objects.all().delete()
-        Sport.objects.all().delete()
         ChatMessage.objects.all().delete()
         PendingUpload.objects.all().delete()
 
