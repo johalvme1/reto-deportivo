@@ -371,6 +371,9 @@ class DangerZoneWipeView(APIView):
         ChatMessage.objects.all().delete()
         PendingUpload.objects.all().delete()
 
+        User = get_user_model()
+        User.objects.all().update(bonus_points=0)
+
         for folder in ['uploads', 'steps', 'measurements', 'challenges', 'pending']:
             path = settings.MEDIA_ROOT / folder
             if path.exists():
