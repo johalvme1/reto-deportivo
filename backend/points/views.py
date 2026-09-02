@@ -317,12 +317,12 @@ class MeasurementView(APIView):
         from datetime import date as date_type, timedelta
         today = date_type.today()
 
-        schedule, _ = MeasurementSchedule.objects.get_or_create(
+        schedule, created = MeasurementSchedule.objects.get_or_create(
             user=request.user,
-            defaults={'next_date': today + timedelta(days=15)}
+            defaults={'next_date': today}
         )
 
-        if schedule.next_date and today < schedule.next_date:
+        if not created and schedule.next_date and today < schedule.next_date:
             return Response({
                 'error': f'Próxima medición el {schedule.next_date.strftime("%d/%m/%Y")}'
             }, status=status.HTTP_400_BAD_REQUEST)
