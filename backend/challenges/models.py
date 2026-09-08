@@ -21,11 +21,9 @@ class Challenge(models.Model):
 
     def effective_active(self, now=None):
         now = now or timezone.now()
-        if self.active:
-            return True
-        if not self.start_date:
+        if not self.active:
             return False
-        if self.start_date > now:
+        if self.start_date and self.start_date > now:
             return False
         if self.end_date and now > self.end_date:
             return False
