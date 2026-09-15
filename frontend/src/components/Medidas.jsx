@@ -25,15 +25,19 @@ export default function Medidas() {
       const data = res.measurements || res;
       setMeasurements(Array.isArray(data) ? data : []);
       if (res.schedule) setSchedule(res.schedule);
-      const uniqueUsers = [];
-      const seen = new Set();
-      (Array.isArray(data) ? data : []).forEach(m => {
-        if (!seen.has(m.user_id)) {
-          seen.add(m.user_id);
-          uniqueUsers.push({ id: m.user_id, name: m.user_name });
-        }
-      });
-      setUsers(uniqueUsers);
+      if (res.users) {
+        setUsers(res.users);
+      } else {
+        const uniqueUsers = [];
+        const seen = new Set();
+        (Array.isArray(data) ? data : []).forEach(m => {
+          if (!seen.has(m.user_id)) {
+            seen.add(m.user_id);
+            uniqueUsers.push({ id: m.user_id, name: m.user_name });
+          }
+        });
+        setUsers(uniqueUsers);
+      }
     } catch {}
   };
 

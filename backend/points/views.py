@@ -306,6 +306,10 @@ class MeasurementView(APIView):
                 'photo': m.photo.url if m.photo else None,
             })
 
+        User = get_user_model()
+        all_users = User.objects.filter(is_active=True).order_by('name', 'username')
+        users_data = [{'id': u.id, 'name': u.name or u.username} for u in all_users]
+
         schedule, _ = MeasurementSchedule.objects.get_or_create(
             user=request.user,
             defaults={'next_date': today, 'interval_days': 15}
@@ -313,6 +317,7 @@ class MeasurementView(APIView):
 
         return Response({
             'measurements': data,
+            'users': users_data,
             'schedule': {
                 'next_date': schedule.next_date.isoformat(),
                 'interval_days': schedule.interval_days,
