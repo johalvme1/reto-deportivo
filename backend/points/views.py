@@ -322,13 +322,24 @@ class MeasurementView(APIView):
 
     def post(self, request):
         from datetime import date as date_type, timedelta
+        from accounts.permissions import is_supervisor_user
         today = date_type.today()
 
+        is_supervisor = is_supervisor_user(request.user)
+        target_user_id = request.data.get('user_id') if is_supervisor else None
+        target_user = request.user
+        if target_user_id and is_supervisor:
+            User = get_user_model()
+            try:
+                target_user = User.objects.get(id=target_user_id)
+            except User.DoesNotExist:
+                return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
         schedule, _ = MeasurementSchedule.objects.get_or_create(
-            user=request.user,
+            user=target_user,
             defaults={'next_date': today, 'interval_days': 15}
         )
-        if today != schedule.next_date:
+        if not is_supervisor and today != schedule.next_date:
             return Response({
                 'error': f'Solo puedes registrar medidas el día de tu medición. Próxima medición: {schedule.next_date.strftime("%d/%m/%Y")}'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -342,7 +353,7 @@ class MeasurementView(APIView):
         if peso is None or grasa_corporal is None or grasa_visceral is None or musculo is None:
             return Response({'error': 'Todos los campos son obligatorios (peso, grasa corporal, grasa visceral, músculo)'}, status=status.HTTP_400_BAD_REQUEST)
 
-        m = Measurement(user=request.user, date=today)
+        m = Measurement(user=target_user, date=today)
         if peso is not None: m.peso = peso
         if grasa_corporal is not None: m.grasa_corporal = grasa_corporal
         if grasa_visceral is not None: m.grasa_visceral = grasa_visceral

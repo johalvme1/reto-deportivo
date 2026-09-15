@@ -49,6 +49,10 @@ export default function Medidas() {
     setSaving(true);
     try {
       const formData = new FormData();
+      const isSupervisor = user?.role === 'supervisor' || user?.is_superuser;
+      if (isSupervisor && selectedUser !== 'all' && selectedUser !== user.id) {
+        formData.append('user_id', selectedUser);
+      }
       if (peso) formData.append('peso', parseFloat(peso));
       if (grasaCorporal) formData.append('grasa_corporal', parseFloat(grasaCorporal));
       if (grasaVisceral) formData.append('grasa_visceral', parseFloat(grasaVisceral));
@@ -110,6 +114,8 @@ export default function Medidas() {
   });
 
   const isOwn = selectedUser !== 'all' && selectedUser === user.id;
+  const isSupervisor = user?.role === 'supervisor' || user?.is_superuser;
+  const canAdd = isOwn || (isSupervisor && selectedUser !== 'all');
 
   return (
     <div className="card">
@@ -142,6 +148,15 @@ export default function Medidas() {
         </div>
       )}
 
+      {isSupervisor && selectedUser !== 'all' && selectedUser !== user.id && (
+        <div className="card" style={{ background: 'linear-gradient(135deg, #e3f2fd, #e1f5fe)', border: '1px solid #bbdefb', marginBottom: 16 }}>
+          <strong style={{ color: '#1565c0' }}>Modo supervisor</strong>
+          <div style={{ fontSize: '0.8rem', color: '#0d47a1', marginTop: 4 }}>
+            Estás agregando medidas para otro participante. Las restricciones de día no aplican.
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: 16 }}>
         <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Ver medidas de:</label>
         <select value={selectedUser} onChange={e => setSelectedUser(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
@@ -153,49 +168,52 @@ export default function Medidas() {
         </select>
       </div>
 
-      {isOwn && (
+      {canAdd && (() => {
+        const fieldsDisabled = isOwn && !schedule?.is_measurement_day;
+        return (
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20, padding: '12px 14px', background: '#faf3fc', borderRadius: 10, border: '1px solid #f1e0f5' }}>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Peso (kg)</label>
             <input type="number" step="0.01" value={peso} onChange={e => setPeso(e.target.value)}
               placeholder="Ej: 70.5" required style={{ display: 'block', marginTop: 4, width: 110 }}
-              disabled={!schedule?.is_measurement_day} />
+              disabled={fieldsDisabled} />
             {!peso && <span style={{ fontSize: '0.7rem', color: '#ef476f' }}>Pendiente</span>}
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa corporal (%)</label>
             <input type="number" step="0.01" value={grasaCorporal} onChange={e => setGrasaCorporal(e.target.value)}
               placeholder="Ej: 22.5" required style={{ display: 'block', marginTop: 4, width: 110 }}
-              disabled={!schedule?.is_measurement_day} />
+              disabled={fieldsDisabled} />
             {!grasaCorporal && <span style={{ fontSize: '0.7rem', color: '#ef476f' }}>Pendiente</span>}
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Grasa visceral</label>
             <input type="number" step="0.01" value={grasaVisceral} onChange={e => setGrasaVisceral(e.target.value)}
               placeholder="Ej: 8" required style={{ display: 'block', marginTop: 4, width: 110 }}
-              disabled={!schedule?.is_measurement_day} />
+              disabled={fieldsDisabled} />
             {!grasaVisceral && <span style={{ fontSize: '0.7rem', color: '#ef476f' }}>Pendiente</span>}
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Músculo (%)</label>
             <input type="number" step="0.01" value={musculo} onChange={e => setMusculo(e.target.value)}
               placeholder="Ej: 35.2" required style={{ display: 'block', marginTop: 4, width: 110 }}
-              disabled={!schedule?.is_measurement_day} />
+              disabled={fieldsDisabled} />
             {!musculo && <span style={{ fontSize: '0.7rem', color: '#ef476f' }}>Pendiente</span>}
           </div>
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Foto</label>
             <input type="file" accept="image/*" onChange={e => setPhoto(e.target.files[0])}
               style={{ display: 'block', marginTop: 4, fontSize: '0.8rem' }}
-              disabled={!schedule?.is_measurement_day} />
+              disabled={fieldsDisabled} />
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || !schedule?.is_measurement_day}>
+            <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || fieldsDisabled}>
               {saving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       <input ref={photoEditRef} type="file" accept="image/*" onChange={handlePhotoEditSave} style={{ display: 'none' }} />
 
