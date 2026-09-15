@@ -340,6 +340,13 @@ class MeasurementView(APIView):
             except User.DoesNotExist:
                 return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
+        measurement_date = today
+        if is_supervisor and request.data.get('measurement_date'):
+            try:
+                measurement_date = date_type.fromisoformat(request.data.get('measurement_date'))
+            except ValueError:
+                return Response({'error': 'Formato de fecha inválido'}, status=status.HTTP_400_BAD_REQUEST)
+
         schedule, _ = MeasurementSchedule.objects.get_or_create(
             user=target_user,
             defaults={'next_date': today, 'interval_days': 15}
@@ -358,7 +365,7 @@ class MeasurementView(APIView):
         if peso is None or grasa_corporal is None or grasa_visceral is None or musculo is None:
             return Response({'error': 'Todos los campos son obligatorios (peso, grasa corporal, grasa visceral, músculo)'}, status=status.HTTP_400_BAD_REQUEST)
 
-        m = Measurement(user=target_user, date=today)
+        m = Measurement(user=target_user, date=measurement_date)
         if peso is not None: m.peso = peso
         if grasa_corporal is not None: m.grasa_corporal = grasa_corporal
         if grasa_visceral is not None: m.grasa_visceral = grasa_visceral
@@ -366,7 +373,7 @@ class MeasurementView(APIView):
         if photo: m.photo = photo
         m.save()
 
-        schedule.next_date = today + timedelta(days=schedule.interval_days)
+        schedule.next_date = measurement_date + timedelta(days=schedule.interval_days)
         schedule.save(update_fields=['next_date'])
 
         return Response({

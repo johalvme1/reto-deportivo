@@ -17,6 +17,7 @@ export default function Medidas() {
   const [saving, setSaving] = useState(false);
   const [editingPhotoId, setEditingPhotoId] = useState(null);
   const [schedule, setSchedule] = useState(null);
+  const [measurementDate, setMeasurementDate] = useState('');
   const photoEditRef = useRef(null);
 
   const load = async () => {
@@ -57,6 +58,9 @@ export default function Medidas() {
       if (isSupervisor && selectedUser !== 'all' && selectedUser !== user.id) {
         formData.append('user_id', selectedUser);
       }
+      if (isSupervisor && measurementDate) {
+        formData.append('measurement_date', measurementDate);
+      }
       if (peso) formData.append('peso', parseFloat(peso));
       if (grasaCorporal) formData.append('grasa_corporal', parseFloat(grasaCorporal));
       if (grasaVisceral) formData.append('grasa_visceral', parseFloat(grasaVisceral));
@@ -64,7 +68,7 @@ export default function Medidas() {
       if (photo) formData.append('photo', photo);
       await saveMeasurement(formData);
       setSuccess('Medidas guardadas');
-      setPeso(''); setGrasaCorporal(''); setGrasaVisceral(''); setMusculo(''); setPhoto(null);
+      setPeso(''); setGrasaCorporal(''); setGrasaVisceral(''); setMusculo(''); setPhoto(null); setMeasurementDate('');
       load();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
@@ -176,6 +180,14 @@ export default function Medidas() {
         const fieldsDisabled = isOwn && !schedule?.is_measurement_day;
         return (
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20, padding: '12px 14px', background: '#faf3fc', borderRadius: 10, border: '1px solid #f1e0f5' }}>
+          {isSupervisor && selectedUser !== 'all' && selectedUser !== user.id && (
+            <div>
+              <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Fecha de medición</label>
+              <input type="date" value={measurementDate} onChange={e => setMeasurementDate(e.target.value)}
+                style={{ display: 'block', marginTop: 4, width: 150 }} />
+              <span style={{ fontSize: '0.7rem', color: '#b088c0' }}>Vacío = hoy</span>
+            </div>
+          )}
           <div>
             <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Peso (kg)</label>
             <input type="number" step="0.01" value={peso} onChange={e => setPeso(e.target.value)}
