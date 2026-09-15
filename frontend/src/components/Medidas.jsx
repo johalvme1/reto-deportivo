@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getMeasurements, saveMeasurement, updateMeasurementPhoto } from '../api';
+import { getMeasurements, saveMeasurement, updateMeasurement, deleteMeasurement, updateMeasurementPhoto } from '../api';
 
 export default function Medidas() {
   const { user } = useAuth();
@@ -18,6 +18,7 @@ export default function Medidas() {
   const [editingPhotoId, setEditingPhotoId] = useState(null);
   const [schedule, setSchedule] = useState(null);
   const [measurementDate, setMeasurementDate] = useState('');
+  const [editingMeasurementId, setEditingMeasurementId] = useState(null);
   const photoEditRef = useRef(null);
 
   const load = async () => {
@@ -95,6 +96,48 @@ export default function Medidas() {
       setEditingPhotoId(null);
       if (photoEditRef.current) photoEditRef.current.value = '';
     }
+  };
+
+  const handleEdit = (m) => {
+    setSelectedUser(m.user_id);
+    setPeso(m.peso?.toString() || '');
+    setGrasaCorporal(m.grasa_corporal?.toString() || '');
+    setGrasaVisceral(m.grasa_visceral?.toString() || '');
+    setMusculo(m.musculo?.toString() || '');
+    setMeasurementDate(m.date || '');
+    setEditingMeasurementId(m.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleUpdate = async () => {
+    if (saving) return;
+    setError(''); setSuccess('');
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('peso', parseFloat(peso));
+      formData.append('grasa_corporal', parseFloat(grasaCorporal));
+      formData.append('grasa_visceral', parseFloat(grasaVisceral));
+      formData.append('musculo', parseFloat(musculo));
+      if (measurementDate) formData.append('measurement_date', measurementDate);
+      if (photo) formData.append('photo', photo);
+      await updateMeasurement(editingMeasurementId, formData);
+      setSuccess('Medida actualizada');
+      setPeso(''); setGrasaCorporal(''); setGrasaVisceral(''); setMusculo(''); setPhoto(null); setMeasurementDate('');
+      setEditingMeasurementId(null);
+      load();
+    } catch (err) { setError(err.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('¿Eliminar esta medición?')) return;
+    setError(''); setSuccess('');
+    try {
+      await deleteMeasurement(id);
+      setSuccess('Medida eliminada');
+      load();
+    } catch (err) { setError(err.message); }
   };
 
   const DiffInline = ({ current, previous }) => {
@@ -178,9 +221,10 @@ export default function Medidas() {
 
       {canAdd && (() => {
         const fieldsDisabled = isOwn && !schedule?.is_measurement_day;
+        const showDateField = isSupervisor && (selectedUser !== 'all' && selectedUser !== user.id || editingMeasurementId);
         return (
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20, padding: '12px 14px', background: '#faf3fc', borderRadius: 10, border: '1px solid #f1e0f5' }}>
-          {isSupervisor && selectedUser !== 'all' && selectedUser !== user.id && (
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20, padding: '12px 14px', background: editingMeasurementId ? '#e3f2fd' : '#faf3fc', borderRadius: 10, border: editingMeasurementId ? '1px solid #bbdefb' : '1px solid #f1e0f5' }}>
+          {showDateField && (
             <div>
               <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Fecha de medición</label>
               <input type="date" value={measurementDate} onChange={e => setMeasurementDate(e.target.value)}
@@ -222,10 +266,16 @@ export default function Medidas() {
               style={{ display: 'block', marginTop: 4, fontSize: '0.8rem' }}
               disabled={fieldsDisabled} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || fieldsDisabled}>
-              {saving ? 'Guardando...' : 'Guardar'}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+            <button className="btn btn-primary btn-sm" onClick={editingMeasurementId ? handleUpdate : handleSave} disabled={saving || fieldsDisabled}>
+              {saving ? 'Guardando...' : editingMeasurementId ? 'Actualizar' : 'Guardar'}
             </button>
+            {editingMeasurementId && (
+              <button className="btn btn-sm" onClick={() => { setEditingMeasurementId(null); setPeso(''); setGrasaCorporal(''); setGrasaVisceral(''); setMusculo(''); setMeasurementDate(''); setPhoto(null); }}
+                style={{ background: '#f1e0f5', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 12px', fontSize: '0.8rem' }}>
+                Cancelar
+              </button>
+            )}
           </div>
         </div>
         );
@@ -247,6 +297,7 @@ export default function Medidas() {
                     <th style={thStyle}>Grasa vis.</th>
                     <th style={thStyle}>Músculo (%)</th>
                     <th style={thStyle}>Foto</th>
+                    {isSupervisor && <th style={thStyle}>Acciones</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -256,6 +307,7 @@ export default function Medidas() {
                     const isToday = m.date === new Date().toISOString().slice(0, 10);
                     const timeStr = createdAt ? createdAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '';
                     const dateStr = new Date(m.date + 'T00:00:00').toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short' });
+                    const canEdit = isSupervisor || m.user_id === user.id;
                     return (
                       <tr key={m.id} style={{
                         background: isToday ? 'linear-gradient(135deg, #fdeef6, #f3e7fa)' : '#fdf4fb',
@@ -286,7 +338,7 @@ export default function Medidas() {
                           {m.photo ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <a href={m.photo} target="_blank" rel="noopener noreferrer" style={{ color: '#d9629f' }}>📷 Ver</a>
-                              {m.user_id === user.id && (
+                              {canEdit && (
                                 <button
                                   onClick={() => handleEditPhoto(m.id)}
                                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#b088c0', padding: 2 }}
@@ -295,7 +347,7 @@ export default function Medidas() {
                               )}
                             </div>
                           ) : (
-                            m.user_id === user.id ? (
+                            canEdit ? (
                               <button
                                 onClick={() => handleEditPhoto(m.id)}
                                 style={{ background: 'none', border: '1px dashed #d9629f', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem', color: '#d9629f', padding: '4px 8px' }}
@@ -303,6 +355,16 @@ export default function Medidas() {
                             ) : '—'
                           )}
                         </td>
+                        {isSupervisor && (
+                          <td style={tdStyle}>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <button onClick={() => handleEdit(m)} title="Editar"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>✏️</button>
+                              <button onClick={() => handleDelete(m.id)} title="Eliminar"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>🗑️</button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

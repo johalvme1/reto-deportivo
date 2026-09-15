@@ -431,3 +431,20 @@ export function updateMeasurementPhoto(id, file) {
     body: formData
   });
 }
+
+export function updateMeasurement(id, data) {
+  const formData = data instanceof FormData ? data : new FormData();
+  if (!(data instanceof FormData)) {
+    Object.entries(data).forEach(([k, v]) => { if (v !== undefined && v !== null) formData.append(k, v); });
+  }
+  return request(`/points/measurements/?id=${id}`, {
+    method: 'PUT',
+    body: formData
+  });
+}
+
+export function deleteMeasurement(id) {
+  return request(`/points/measurements/?id=${id}`, {
+    method: 'DELETE'
+  });
+}

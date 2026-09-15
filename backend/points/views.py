@@ -391,18 +391,38 @@ class MeasurementView(APIView):
         })
 
     def put(self, request):
+        from accounts.permissions import is_supervisor_user
         measurement_id = request.query_params.get('id')
         if not measurement_id:
             return Response({'error': 'Falta id'}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            m = Measurement.objects.get(id=measurement_id, user=request.user)
+            m = Measurement.objects.get(id=measurement_id)
         except Measurement.DoesNotExist:
             return Response({'error': 'No encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
+        is_supervisor = is_supervisor_user(request.user)
+        if not is_supervisor and m.user_id != request.user.id:
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        peso = request.data.get('peso')
+        grasa_corporal = request.data.get('grasa_corporal')
+        grasa_visceral = request.data.get('grasa_visceral')
+        musculo = request.data.get('musculo')
         photo = request.FILES.get('photo')
-        if photo:
-            m.photo = photo
-            m.save(update_fields=['photo'])
+        measurement_date = request.data.get('measurement_date')
+
+        if peso is not None: m.peso = peso
+        if grasa_corporal is not None: m.grasa_corporal = grasa_corporal
+        if grasa_visceral is not None: m.grasa_visceral = grasa_visceral
+        if musculo is not None: m.musculo = musculo
+        if photo: m.photo = photo
+        if measurement_date and is_supervisor:
+            from datetime import date as date_type
+            try:
+                m.date = date_type.fromisoformat(measurement_date)
+            except ValueError:
+                pass
+        m.save()
 
         return Response({
             'id': m.id,
@@ -416,6 +436,23 @@ class MeasurementView(APIView):
             'musculo': float(m.musculo) if m.musculo is not None else None,
             'photo': m.photo.url if m.photo else None,
         })
+
+    def delete(self, request):
+        from accounts.permissions import is_supervisor_user
+        measurement_id = request.query_params.get('id')
+        if not measurement_id:
+            return Response({'error': 'Falta id'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            m = Measurement.objects.get(id=measurement_id)
+        except Measurement.DoesNotExist:
+            return Response({'error': 'No encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        is_supervisor = is_supervisor_user(request.user)
+        if not is_supervisor and m.user_id != request.user.id:
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        m.delete()
+        return Response({'ok': True})
 
 
 class DangerZoneWipeView(APIView):
