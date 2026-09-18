@@ -310,8 +310,13 @@ class MeasurementView(APIView):
         all_users = User.objects.filter(is_active=True).order_by('name', 'username')
         users_data = [{'id': u.id, 'name': u.name or u.username} for u in all_users]
 
+        from accounts.permissions import is_supervisor_user
+        schedule_user = request.user
+        if user_id and is_supervisor_user(request.user):
+            schedule_user = User.objects.filter(id=user_id).first() or request.user
+
         schedule, _ = MeasurementSchedule.objects.get_or_create(
-            user=request.user,
+            user=schedule_user,
             defaults={'next_date': today, 'interval_days': 15}
         )
 
@@ -319,6 +324,8 @@ class MeasurementView(APIView):
             'measurements': data,
             'users': users_data,
             'schedule': {
+                'user_id': schedule_user.id,
+                'user_name': schedule_user.name or schedule_user.username,
                 'next_date': schedule.next_date.isoformat(),
                 'interval_days': schedule.interval_days,
                 'is_measurement_day': today == schedule.next_date,
@@ -453,6 +460,76 @@ class MeasurementView(APIView):
 
         m.delete()
         return Response({'ok': True})
+
+
+class MeasurementScheduleView(APIView):
+    def get(self, request):
+        from accounts.permissions import is_supervisor_user
+        User = get_user_model()
+        today = date.today()
+
+        target = request.user
+        user_id = request.query_params.get('user_id')
+        if user_id and is_supervisor_user(request.user):
+            target = User.objects.filter(id=user_id).first() or request.user
+
+        schedule, _ = MeasurementSchedule.objects.get_or_create(
+            user=target,
+            defaults={'next_date': today, 'interval_days': 15}
+        )
+        return Response({
+            'user_id': target.id,
+            'user_name': target.name or target.username,
+            'next_date': schedule.next_date.isoformat(),
+            'interval_days': schedule.interval_days,
+            'is_measurement_day': today == schedule.next_date,
+        })
+
+    def post(self, request):
+        from accounts.permissions import is_supervisor_user
+        if not is_supervisor_user(request.user):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+
+        User = get_user_model()
+        user_id = request.data.get('user_id')
+        next_date_raw = request.data.get('next_date')
+        if not user_id or not next_date_raw:
+            return Response({'error': 'user_id y next_date son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            target = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            next_date = date.fromisoformat(str(next_date_raw))
+        except (TypeError, ValueError):
+            return Response({'error': 'Formato de fecha inválido (YYYY-MM-DD)'}, status=status.HTTP_400_BAD_REQUEST)
+
+        schedule, _ = MeasurementSchedule.objects.get_or_create(
+            user=target,
+            defaults={'next_date': next_date, 'interval_days': 15}
+        )
+        schedule.next_date = next_date
+
+        interval = request.data.get('interval_days')
+        if interval not in (None, ''):
+            try:
+                interval = int(interval)
+                if interval < 1:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return Response({'error': 'interval_days inválido'}, status=status.HTTP_400_BAD_REQUEST)
+            schedule.interval_days = interval
+
+        schedule.save()
+        return Response({
+            'ok': True,
+            'user_id': target.id,
+            'user_name': target.name or target.username,
+            'next_date': schedule.next_date.isoformat(),
+            'interval_days': schedule.interval_days,
+        })
 
 
 class DangerZoneWipeView(APIView):

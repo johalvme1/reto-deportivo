@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import TodayPointsView, ImageUploadView, StepsSubmitView, ActivitySubmitView, HistoryView, LeaderboardView, RestDayView, CompetitionPeriodView, CompetitionPeriodAdminView, MeasurementView, DangerZoneWipeView
+from .views import TodayPointsView, ImageUploadView, StepsSubmitView, ActivitySubmitView, HistoryView, LeaderboardView, RestDayView, CompetitionPeriodView, CompetitionPeriodAdminView, MeasurementView, MeasurementScheduleView, DangerZoneWipeView
 
 urlpatterns = [
     path('today/', TodayPointsView.as_view(), name='today-points'),
@@ -12,5 +12,6 @@ urlpatterns = [
     path('competition-period/', CompetitionPeriodView.as_view(), name='competition-period'),
     path('competition-period/admin/', CompetitionPeriodAdminView.as_view(), name='competition-period-admin'),
     path('measurements/', MeasurementView.as_view(), name='measurements'),
+    path('measurement-schedule/', MeasurementScheduleView.as_view(), name='measurement-schedule'),
     path('danger-zone/wipe/', DangerZoneWipeView.as_view(), name='danger-zone-wipe'),
 ]

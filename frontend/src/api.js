@@ -448,3 +448,15 @@ export function deleteMeasurement(id) {
     method: 'DELETE'
   });
 }
+
+export function getMeasurementSchedule(userId) {
+  const params = userId ? `?user_id=${userId}` : '';
+  return request(`/points/measurement-schedule/${params}`);
+}
+
+export function setMeasurementSchedule(userId, nextDate, intervalDays) {
+  return request('/points/measurement-schedule/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, next_date: nextDate, interval_days: intervalDays })
+  });
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getMeasurements, saveMeasurement, updateMeasurement, deleteMeasurement, updateMeasurementPhoto } from '../api';
+import { getMeasurements, saveMeasurement, updateMeasurement, deleteMeasurement, updateMeasurementPhoto, setMeasurementSchedule } from '../api';
 
 export default function Medidas() {
   const { user } = useAuth();
@@ -19,6 +19,9 @@ export default function Medidas() {
   const [schedule, setSchedule] = useState(null);
   const [measurementDate, setMeasurementDate] = useState('');
   const [editingMeasurementId, setEditingMeasurementId] = useState(null);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleInterval, setScheduleInterval] = useState(15);
+  const [savingSchedule, setSavingSchedule] = useState(false);
   const photoEditRef = useRef(null);
 
   const load = async () => {
@@ -26,7 +29,11 @@ export default function Medidas() {
       const res = await getMeasurements(selectedUser === 'all' ? null : selectedUser);
       const data = res.measurements || res;
       setMeasurements(Array.isArray(data) ? data : []);
-      if (res.schedule) setSchedule(res.schedule);
+      if (res.schedule) {
+        setSchedule(res.schedule);
+        setScheduleDate(res.schedule.next_date || '');
+        setScheduleInterval(res.schedule.interval_days ?? 15);
+      }
       if (res.users) {
         setUsers(res.users);
       } else {
@@ -140,6 +147,21 @@ export default function Medidas() {
     } catch (err) { setError(err.message); }
   };
 
+  const handleSaveSchedule = async () => {
+    if (savingSchedule) return;
+    if (!scheduleDate) { setError('Selecciona el día de la medición'); return; }
+    setError(''); setSuccess('');
+    setSavingSchedule(true);
+    try {
+      const res = await setMeasurementSchedule(selectedUser, scheduleDate, scheduleInterval);
+      const pretty = new Date(res.next_date + 'T00:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
+      setSuccess(`Día de medición actualizado: ${pretty}`);
+      setSchedule({ ...schedule, next_date: res.next_date, interval_days: res.interval_days, is_measurement_day: res.next_date === new Date().toISOString().slice(0, 10) });
+      load();
+    } catch (err) { setError(err.message); }
+    finally { setSavingSchedule(false); }
+  };
+
   const DiffInline = ({ current, previous }) => {
     if (current == null || previous == null) return null;
     const diff = (current - previous).toFixed(2);
@@ -204,6 +226,33 @@ export default function Medidas() {
           <strong style={{ color: '#1565c0' }}>Modo supervisor</strong>
           <div style={{ fontSize: '0.8rem', color: '#0d47a1', marginTop: 4 }}>
             Estás agregando medidas para otro participante. Las restricciones de día no aplican.
+          </div>
+        </div>
+      )}
+
+      {isSupervisor && selectedUser !== 'all' && selectedUser !== user.id && (
+        <div className="card" style={{ background: 'linear-gradient(135deg, #fff8e1, #fff3e0)', border: '1px solid #ffe0b2', marginBottom: 16 }}>
+          <strong style={{ color: '#e65100' }}>📅 Día de medición del participante</strong>
+          <div style={{ fontSize: '0.8rem', color: '#bf360c', marginTop: 4 }}>
+            Define o cambia el día en que este participante puede registrar sus medidas.
+            {schedule?.next_date && (
+              <> Día actual: <strong>{new Date(schedule.next_date + 'T00:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}</strong>.</>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 12 }}>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Día de medición</label>
+              <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
+                style={{ display: 'block', marginTop: 4, width: 160 }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: '#8a5f96' }}>Cada (días)</label>
+              <input type="number" min="1" value={scheduleInterval} onChange={e => setScheduleInterval(e.target.value)}
+                style={{ display: 'block', marginTop: 4, width: 90 }} />
+            </div>
+            <button className="btn btn-primary btn-sm" onClick={handleSaveSchedule} disabled={savingSchedule || !scheduleDate}>
+              {savingSchedule ? 'Guardando...' : 'Guardar día'}
+            </button>
           </div>
         </div>
       )}
