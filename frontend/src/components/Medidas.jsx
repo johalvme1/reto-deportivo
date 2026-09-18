@@ -31,8 +31,10 @@ export default function Medidas() {
       setMeasurements(Array.isArray(data) ? data : []);
       if (res.schedule) {
         setSchedule(res.schedule);
-        setScheduleDate(res.schedule.next_date || '');
-        setScheduleInterval(res.schedule.interval_days ?? 15);
+        if (selectedUser !== 'all') {
+          setScheduleDate(res.schedule.next_date || '');
+          setScheduleInterval(res.schedule.interval_days ?? 15);
+        }
       }
       if (res.users) {
         setUsers(res.users);
@@ -153,10 +155,11 @@ export default function Medidas() {
     setError(''); setSuccess('');
     setSavingSchedule(true);
     try {
-      const res = await setMeasurementSchedule(selectedUser, scheduleDate, scheduleInterval);
+      const res = await setMeasurementSchedule(selectedUser === 'all' ? 'all' : selectedUser, scheduleDate, scheduleInterval);
       const pretty = new Date(res.next_date + 'T00:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
-      setSuccess(`Día de medición actualizado: ${pretty}`);
-      setSchedule({ ...schedule, next_date: res.next_date, interval_days: res.interval_days, is_measurement_day: res.next_date === new Date().toISOString().slice(0, 10) });
+      setSuccess(res.all
+        ? `Día de medición actualizado para ${res.count} participante(s): ${pretty}`
+        : `Día de medición actualizado: ${pretty}`);
       load();
     } catch (err) { setError(err.message); }
     finally { setSavingSchedule(false); }
@@ -230,12 +233,16 @@ export default function Medidas() {
         </div>
       )}
 
-      {isSupervisor && selectedUser !== 'all' && selectedUser !== user.id && (
+      {isSupervisor && (selectedUser === 'all' || selectedUser !== user.id) && (
         <div className="card" style={{ background: 'linear-gradient(135deg, #fff8e1, #fff3e0)', border: '1px solid #ffe0b2', marginBottom: 16 }}>
-          <strong style={{ color: '#e65100' }}>📅 Día de medición del participante</strong>
+          <strong style={{ color: '#e65100' }}>
+            📅 {selectedUser === 'all' ? 'Día de medición (todos los participantes)' : 'Día de medición del participante'}
+          </strong>
           <div style={{ fontSize: '0.8rem', color: '#bf360c', marginTop: 4 }}>
-            Define o cambia el día en que este participante puede registrar sus medidas.
-            {schedule?.next_date && (
+            {selectedUser === 'all'
+              ? 'Define o cambia el día de medición para todos los participantes a la vez.'
+              : 'Define o cambia el día en que este participante puede registrar sus medidas.'}
+            {selectedUser !== 'all' && schedule?.next_date && (
               <> Día actual: <strong>{new Date(schedule.next_date + 'T00:00:00').toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })}</strong>.</>
             )}
           </div>
@@ -251,7 +258,7 @@ export default function Medidas() {
                 style={{ display: 'block', marginTop: 4, width: 90 }} />
             </div>
             <button className="btn btn-primary btn-sm" onClick={handleSaveSchedule} disabled={savingSchedule || !scheduleDate}>
-              {savingSchedule ? 'Guardando...' : 'Guardar día'}
+              {savingSchedule ? 'Guardando...' : selectedUser === 'all' ? 'Guardar para todos' : 'Guardar día'}
             </button>
           </div>
         </div>

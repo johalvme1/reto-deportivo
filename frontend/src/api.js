@@ -455,8 +455,14 @@ export function getMeasurementSchedule(userId) {
 }
 
 export function setMeasurementSchedule(userId, nextDate, intervalDays) {
+  const body = { next_date: nextDate, interval_days: intervalDays };
+  if (userId === 'all' || userId == null) {
+    body.all = true;
+  } else {
+    body.user_id = userId;
+  }
   return request('/points/measurement-schedule/', {
     method: 'POST',
-    body: JSON.stringify({ user_id: userId, next_date: nextDate, interval_days: intervalDays })
+    body: JSON.stringify(body)
   });
 }

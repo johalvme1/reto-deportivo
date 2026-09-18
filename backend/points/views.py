@@ -491,26 +491,14 @@ class MeasurementScheduleView(APIView):
             return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
 
         User = get_user_model()
-        user_id = request.data.get('user_id')
         next_date_raw = request.data.get('next_date')
-        if not user_id or not next_date_raw:
-            return Response({'error': 'user_id y next_date son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            target = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        if not next_date_raw:
+            return Response({'error': 'next_date es requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             next_date = date.fromisoformat(str(next_date_raw))
         except (TypeError, ValueError):
             return Response({'error': 'Formato de fecha inválido (YYYY-MM-DD)'}, status=status.HTTP_400_BAD_REQUEST)
-
-        schedule, _ = MeasurementSchedule.objects.get_or_create(
-            user=target,
-            defaults={'next_date': next_date, 'interval_days': 15}
-        )
-        schedule.next_date = next_date
 
         interval = request.data.get('interval_days')
         if interval not in (None, ''):
@@ -520,8 +508,48 @@ class MeasurementScheduleView(APIView):
                     raise ValueError
             except (TypeError, ValueError):
                 return Response({'error': 'interval_days inválido'}, status=status.HTTP_400_BAD_REQUEST)
-            schedule.interval_days = interval
+        else:
+            interval = None
 
+        apply_all = str(request.data.get('all')).lower() in ('1', 'true', 'yes')
+
+        if apply_all:
+            targets = User.objects.filter(role='participant', is_active=True)
+            count = 0
+            for target in targets:
+                schedule, _ = MeasurementSchedule.objects.get_or_create(
+                    user=target,
+                    defaults={'next_date': next_date, 'interval_days': interval or 15}
+                )
+                schedule.next_date = next_date
+                if interval is not None:
+                    schedule.interval_days = interval
+                schedule.save()
+                count += 1
+            return Response({
+                'ok': True,
+                'all': True,
+                'count': count,
+                'next_date': next_date.isoformat(),
+                'interval_days': interval or 15,
+            })
+
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({'error': 'user_id o all=true son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            target = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        schedule, _ = MeasurementSchedule.objects.get_or_create(
+            user=target,
+            defaults={'next_date': next_date, 'interval_days': interval or 15}
+        )
+        schedule.next_date = next_date
+        if interval is not None:
+            schedule.interval_days = interval
         schedule.save()
         return Response({
             'ok': True,
