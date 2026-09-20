@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from django.db.models import Count, Q
-from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement, MeasurementSchedule
+from .models import DailyPoint, RestDay, CompetitionPeriod, Measurement, MeasurementSchedule, AdminLog
 from .serializers import DailyPointSerializer
 from activities.models import Activity
 from challenges.models import ChallengeSubmission, Challenge, Medal
@@ -558,6 +558,202 @@ class MeasurementScheduleView(APIView):
             'next_date': schedule.next_date.isoformat(),
             'interval_days': schedule.interval_days,
         })
+
+
+class AdminDailyRecordView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        from accounts.permissions import is_supervisor_user
+        if not is_supervisor_user(request.user):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+        User = get_user_model()
+        user_id = request.query_params.get('user_id')
+        target_date = request.query_params.get('date')
+        qs = DailyPoint.objects.select_related('user', 'activity')
+        if user_id:
+            qs = qs.filter(user_id=user_id)
+        if target_date:
+            qs = qs.filter(date=target_date)
+        records = [{
+            'id': r.id,
+            'user_id': r.user_id,
+            'user_name': r.user.name or r.user.username,
+            'date': r.date.isoformat(),
+            'image': r.image.url if r.image else None,
+            'video': r.video.url if r.video else None,
+            'steps': r.steps,
+            'steps_image': r.steps_image.url if r.steps_image else None,
+            'activity_id': r.activity_id,
+            'activity_name': r.activity.name if r.activity_id else None,
+            'is_rest_day': r.is_rest_day,
+            'points': r.points,
+            'created_at': r.created_at.isoformat(),
+        } for r in qs.order_by('-date')[:50]]
+        return Response({'records': records})
+
+    def post(self, request):
+        from accounts.permissions import is_supervisor_user
+        if not is_supervisor_user(request.user):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+        User = get_user_model()
+        user_id = request.data.get('user_id')
+        raw_date = request.data.get('date')
+        comment = (request.data.get('comment') or '').strip()
+        if not user_id or not raw_date:
+            return Response({'error': 'user_id y date son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            target = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            target_date = date.fromisoformat(str(raw_date))
+        except (TypeError, ValueError):
+            return Response({'error': 'Formato de fecha inválido (YYYY-MM-DD)'}, status=status.HTTP_400_BAD_REQUEST)
+
+        dp, created = DailyPoint.objects.get_or_create(user=target, date=target_date)
+
+        old = {
+            'image': bool(dp.image),
+            'video': bool(dp.video),
+            'steps': dp.steps,
+            'activity': dp.activity_id,
+            'points': dp.points,
+        }
+
+        image_raw, image_dest = resolve_field(request, 'image')
+        video_raw, video_dest = resolve_field(request, 'video')
+        steps_image_raw, steps_image_dest = resolve_field(request, 'steps_image')
+
+        if image_raw or image_dest:
+            dp.image = image_raw if image_raw else image_dest
+        if video_raw or video_dest:
+            dp.video = video_raw if video_raw else video_dest
+        if request.data.get('clear_image') == 'true':
+            dp.image = None
+        if request.data.get('clear_video') == 'true':
+            dp.video = None
+        if request.data.get('clear_steps') == 'true':
+            dp.steps = None
+            dp.steps_image = None
+        if steps_image_raw or steps_image_dest:
+            dp.steps_image = steps_image_raw if steps_image_raw else steps_image_dest
+
+        steps_raw = request.data.get('steps')
+        if steps_raw not in (None, ''):
+            try:
+                steps_val = int(steps_raw)
+                if steps_val < 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return Response({'error': 'Cantidad de pasos inválida'}, status=status.HTTP_400_BAD_REQUEST)
+            dp.steps = steps_val
+
+        activity_id = request.data.get('activity_id')
+        if activity_id not in (None, ''):
+            try:
+                dp.activity = Activity.objects.get(id=int(activity_id))
+            except (Activity.DoesNotExist, TypeError, ValueError):
+                return Response({'error': 'Actividad no encontrada'}, status=status.HTTP_400_BAD_REQUEST)
+        if request.data.get('clear_activity') == 'true':
+            dp.activity = None
+
+        dp.save()
+
+        new = {
+            'image': bool(dp.image),
+            'video': bool(dp.video),
+            'steps': dp.steps,
+            'activity': dp.activity_id,
+            'points': dp.points,
+        }
+
+        AdminLog.objects.create(
+            admin=request.user,
+            participant=target,
+            action='daily_point',
+            date=target_date,
+            comment=comment or ('Se creó el registro diario' if created else 'Se editó el registro diario'),
+            details={'created': created, 'old': old, 'new': new},
+        )
+
+        return Response({
+            'id': dp.id,
+            'user_id': dp.user_id,
+            'user_name': target.name or target.username,
+            'date': dp.date.isoformat(),
+            'image': dp.image.url if dp.image else None,
+            'video': dp.video.url if dp.video else None,
+            'steps': dp.steps,
+            'steps_image': dp.steps_image.url if dp.steps_image else None,
+            'activity_id': dp.activity_id,
+            'activity_name': dp.activity.name if dp.activity_id else None,
+            'is_rest_day': dp.is_rest_day,
+            'points': dp.points,
+            'created': created,
+        })
+
+
+class AdminBonusPointsView(APIView):
+    def post(self, request):
+        from accounts.permissions import is_supervisor_user
+        if not is_supervisor_user(request.user):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+        User = get_user_model()
+        user_id = request.data.get('user_id')
+        bonus = request.data.get('bonus')
+        comment = (request.data.get('comment') or '').strip()
+        if not user_id or bonus is None:
+            return Response({'error': 'user_id y bonus son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            target = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            bonus = round(float(bonus), 1)
+        except (TypeError, ValueError):
+            return Response({'error': 'Valor de puntos inválido'}, status=status.HTTP_400_BAD_REQUEST)
+        old = float(target.bonus_points or 0)
+        target.bonus_points = bonus
+        target.save(update_fields=['bonus_points'])
+        AdminLog.objects.create(
+            admin=request.user,
+            participant=target,
+            action='bonus_points',
+            comment=comment or 'Ajuste de puntos bonus',
+            details={'old_bonus': old, 'new_bonus': bonus},
+        )
+        return Response({
+            'ok': True,
+            'user_id': target.id,
+            'user_name': target.name or target.username,
+            'bonus_points': bonus,
+            'old_bonus': old,
+        })
+
+
+class AdminLogsView(APIView):
+    def get(self, request):
+        from accounts.permissions import is_supervisor_user
+        if not is_supervisor_user(request.user):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+        qs = AdminLog.objects.select_related('admin', 'participant')
+        user_id = request.query_params.get('user_id')
+        if user_id:
+            qs = qs.filter(participant_id=user_id)
+        logs = [{
+            'id': l.id,
+            'action': l.action,
+            'action_label': l.get_action_display(),
+            'admin': l.admin.name or l.admin.username,
+            'participant': l.participant.name or l.participant.username if l.participant_id else None,
+            'participant_id': l.participant_id,
+            'date': l.date.isoformat() if l.date else None,
+            'comment': l.comment,
+            'details': l.details,
+            'created_at': l.created_at.isoformat(),
+        } for l in qs.order_by('-created_at')[:200]]
+        return Response({'logs': logs})
 
 
 class DangerZoneWipeView(APIView):

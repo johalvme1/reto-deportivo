@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import SupervisorDashboard from './SupervisorDashboard';
 import Lightbox from './Lightbox';
 import DonutProgress from './DonutProgress';
+import AdminPoints from './AdminPoints';
 
 function ChallengeManager() {
   const { user } = useAuth();
@@ -448,9 +449,16 @@ export default function AdminPanel() {
         >
           Configuración
         </button>
+        <button
+          className={`admin-tab ${tab === 'puntos' ? 'active' : ''}`}
+          onClick={() => setTab('puntos')}
+        >
+          Puntos y Evidencias
+        </button>
       </div>
       {tab === 'gestion' && <ChallengeManager />}
       {tab === 'dashboard' && <SupervisorDashboard />}
+      {tab === 'puntos' && <AdminPoints />}
       {tab === 'config' && (
         <div style={{ marginTop: 16 }}>
           <h2>Periodo de Competencia</h2>

@@ -466,3 +466,27 @@ export function setMeasurementSchedule(userId, nextDate, intervalDays) {
     body: JSON.stringify(body)
   });
 }
+
+export function getAdminDailyRecords(userId, date) {
+  const params = new URLSearchParams();
+  if (userId) params.set('user_id', userId);
+  if (date) params.set('date', date);
+  const q = params.toString();
+  return request(`/points/admin/daily/${q ? `?${q}` : ''}`);
+}
+
+export function saveAdminDailyRecord(formData, onProgress) {
+  return uploadForm('/points/admin/daily/', formData, onProgress);
+}
+
+export function setBonusPoints(userId, bonus, comment) {
+  return request('/points/admin/bonus/', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, bonus, comment })
+  });
+}
+
+export function getAdminLogs(userId) {
+  const q = userId ? `?user_id=${userId}` : '';
+  return request(`/points/admin/logs/${q}`);
+}

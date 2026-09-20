@@ -88,3 +88,23 @@ class MeasurementSchedule(models.Model):
 
     def __str__(self):
         return f'Schedule: {self.user.name or self.user.username} - próxima: {self.next_date}'
+
+class AdminLog(models.Model):
+    ACTION_CHOICES = [
+        ('daily_point', 'Registro diario'),
+        ('bonus_points', 'Puntos bonus'),
+        ('measurement_day', 'Día de medición'),
+    ]
+    admin = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='admin_logs')
+    participant = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='admin_logs_as_participant')
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES)
+    date = models.DateField(null=True, blank=True, help_text='Fecha afectada del registro')
+    comment = models.TextField(blank=True, default='', help_text='Comentario del admin explicando por qué se hizo')
+    details = models.JSONField(default=dict, blank=True, help_text='Valores anteriores y nuevos para revisión')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.admin.name or self.admin.username} - {self.get_action_display()} - {self.created_at:%Y-%m-%d %H:%M}'
